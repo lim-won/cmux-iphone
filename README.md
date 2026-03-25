@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <video src="recording.mp4" width="350" autoplay loop muted playsinline></video>
+  <img src="recording.gif" width="350" alt="Claude Watch Demo" />
 </p>
 
 ---
