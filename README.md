@@ -69,6 +69,10 @@ A SwiftUI watchOS app that:
 - Apple Watch on the same Wi-Fi as your Mac
 - Claude Code CLI installed
 
+### Apple Watch Wi-Fi Setup
+1. Make sure your Apple Watch is connected to the **same Wi-Fi network** as the Mac running your Claude Code session
+2. On your Apple Watch, go to **Settings > Wi-Fi > your network** and turn **Private Wi-Fi Address** to **Off** — this is required for Bonjour/mDNS discovery to work reliably on the local network
+
 ### 1. Install the bridge
 
 ```bash

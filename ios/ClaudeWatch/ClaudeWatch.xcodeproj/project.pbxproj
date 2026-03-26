@@ -79,7 +79,7 @@
 		0FDEABAF052B796E83242EB1 /* TerminalLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalLine.swift; sourceTree = "<group>"; };
 		103838389D179B4E7BB59FE9 /* StatusDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusDashboard.swift; sourceTree = "<group>"; };
 		1CD1289B8157BD282826FB50 /* BridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeClient.swift; sourceTree = "<group>"; };
-		2B831D2BFB4BE9A940187EF9 /* ClaudeWatch.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; name = ClaudeWatch.app; path = "Claude Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2B831D2BFB4BE9A940187EF9 /* Claude Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Claude Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		303943189CE302F154CA350B /* Claude Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Claude Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		378B120DB4409D4BE7E1578E /* ClaudeWatchWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeWatchWatchApp.swift; sourceTree = "<group>"; };
 		3A8D708937263FAAC2A40CCA /* OutputRingBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRingBuffer.swift; sourceTree = "<group>"; };
@@ -197,7 +197,7 @@
 		753823119B1136E5162D8180 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2B831D2BFB4BE9A940187EF9 /* ClaudeWatch.app */,
+				2B831D2BFB4BE9A940187EF9 /* Claude Watch.app */,
 				303943189CE302F154CA350B /* Claude Watch.app */,
 			);
 			name = Products;
@@ -308,7 +308,7 @@
 			packageProductDependencies = (
 			);
 			productName = ClaudeWatch;
-			productReference = 2B831D2BFB4BE9A940187EF9 /* ClaudeWatch.app */;
+			productReference = 2B831D2BFB4BE9A940187EF9 /* Claude Watch.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -425,6 +425,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = T7HT4U4666;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ClaudeWatch iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -607,6 +608,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = T7HT4U4666;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ClaudeWatch iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
