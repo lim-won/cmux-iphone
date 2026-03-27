@@ -26,7 +26,30 @@ struct ConnectionStatusView: View {
                     if relayService.sessions.isEmpty {
                         waitingView
                     } else {
-                        sessionPager
+                        ZStack(alignment: .bottomLeading) {
+                            sessionPager
+
+                            // Floating clear button — outside TabView to avoid swipe conflicts
+                            Button {
+                                let sessionId = relayService.sessions.indices.contains(activeSessionIndex)
+                                    ? relayService.sessions[activeSessionIndex].id
+                                    : nil
+                                relayService.clearTerminal(sessionId: sessionId)
+                            } label: {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.subtleText.opacity(0.4))
+                                        .frame(width: 32, height: 32)
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(.white)
+                                }
+                                .shadow(color: .black.opacity(0.5), radius: 4, y: 2)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.leading, 26)
+                            .padding(.bottom, 16)
+                        }
 
                         commandInputBar
                     }
@@ -103,15 +126,10 @@ struct ConnectionStatusView: View {
 
     private var sessionPager: some View {
         TabView(selection: $activeSessionIndex) {
-            ForEach(Array(relayService.sessions.enumerated()), id: \.element.id) { index, session in
-                SessionPageView(
-                    session: session,
-                    respondToOption: { label, idx in
-                        relayService.respondToApprovalWithOption(label, index: idx)
-                    },
-                    isThinking: relayService.isThinking
-                )
-                .tag(index)
+            ForEach(Array(relayService.sessions.enumerated()), id: \.element.id) { index, _ in
+                SessionPageView(sessionIndex: index)
+                    .environmentObject(relayService)
+                    .tag(index)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: relayService.sessions.count > 1 ? .automatic : .never))
@@ -163,13 +181,19 @@ struct ConnectionStatusView: View {
 // MARK: - Session Page View
 
 private struct SessionPageView: View {
-    let session: AgentSession
-    let respondToOption: (String, Int) -> Void
-    let isThinking: Bool
+    let sessionIndex: Int
+    @EnvironmentObject private var relayService: RelayService
 
     @State private var cursorVisible = true
 
     private let cursorTimer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
+
+    private var session: AgentSession {
+        guard relayService.sessions.indices.contains(sessionIndex) else {
+            return AgentSession(id: "", agent: .claude, cwd: "", folderName: "", activity: .idle)
+        }
+        return relayService.sessions[sessionIndex]
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -255,7 +279,7 @@ private struct SessionPageView: View {
 
             ForEach(Array(approval.options.enumerated()), id: \.element.id) { index, option in
                 Button {
-                    respondToOption(option.label, index)
+                    relayService.respondToApprovalWithOption(option.label, index: index)
                 } label: {
                     HStack(spacing: 8) {
                         Text("\(index + 1).")
@@ -303,16 +327,13 @@ private struct SessionPageView: View {
     private var terminalView: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 1) {
+                LazyVStack(alignment: .leading, spacing: 2) {
                     ForEach(session.terminalLines.suffix(50)) { line in
-                        Text(line.text)
-                            .font(.system(size: 13, design: .monospaced))
-                            .foregroundStyle(colorForLineType(line.type))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        TerminalLineRow(line: line)
                             .id(line.id)
                     }
 
-                    if isThinking {
+                    if relayService.isThinking {
                         Text(cursorVisible ? "\u{2588}" : " ")
                             .font(.system(size: 13, design: .monospaced))
                             .foregroundStyle(Color.claudeOrange)
@@ -322,12 +343,9 @@ private struct SessionPageView: View {
                 }
                 .padding(12)
             }
-            .frame(maxWidth: .infinity)
-            .background(Color.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
             .onChange(of: session.terminalLines.count) { _, _ in
                 withAnimation(.easeOut(duration: 0.15)) {
-                    if isThinking {
+                    if relayService.isThinking {
                         proxy.scrollTo("thinking-cursor", anchor: .bottom)
                     } else if let last = session.terminalLines.last {
                         proxy.scrollTo(last.id, anchor: .bottom)
@@ -335,18 +353,9 @@ private struct SessionPageView: View {
                 }
             }
         }
-    }
-
-    // MARK: - Helpers
-
-    private func colorForLineType(_ type: TerminalLine.LineType) -> Color {
-        switch type {
-        case .output:   return Color.claudeOrange
-        case .command:  return .white
-        case .system:   return Color.subtleText
-        case .thinking: return Color.claudeOrange.opacity(0.5)
-        case .error:    return .red
-        }
+        .frame(maxWidth: .infinity)
+        .background(Color.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private func colorForOption(_ index: Int, total: Int) -> Color {
@@ -354,6 +363,82 @@ private struct SessionPageView: View {
         if index == 0 { return Color.statusGreen }
         if index == total - 1 { return .red }
         return Color.claudeOrange
+    }
+}
+
+// MARK: - Terminal Line Row (collapsible)
+
+private struct TerminalLineRow: View {
+    let line: TerminalLine
+    @State private var isExpanded = false
+
+    private let truncateThreshold = 60
+
+    private var isLong: Bool {
+        line.text.count > truncateThreshold
+    }
+
+    private var displayText: String {
+        if isExpanded || !isLong {
+            return line.text
+        }
+        return String(line.text.prefix(truncateThreshold)) + "..."
+    }
+
+    private var icon: String? {
+        switch line.type {
+        case .command: return line.text.hasPrefix("$") ? nil : nil
+        case .system:
+            if line.text.hasPrefix("Read ")  { return "doc.text" }
+            if line.text.hasPrefix("Edit ")  { return "pencil" }
+            if line.text.hasPrefix("Write ") { return "doc.badge.plus" }
+            return "gearshape"
+        default: return nil
+        }
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 4) {
+            if let icon, line.type == .system {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.subtleText)
+                    .frame(width: 14, alignment: .center)
+                    .padding(.top, 2)
+            }
+
+            Text(displayText)
+                .font(.system(size: 13, design: .monospaced))
+                .foregroundStyle(colorForType)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if isLong {
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.subtleText.opacity(0.6))
+                    .padding(.top, 3)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if isLong {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isExpanded.toggle()
+                }
+            }
+        }
+    }
+
+    private var colorForType: Color {
+        switch line.type {
+        case .output:
+            if line.text.hasPrefix("  + ") { return Color.statusGreen }
+            return Color.claudeOrange
+        case .command:  return .white
+        case .system:   return Color.subtleText
+        case .thinking: return Color.claudeOrange.opacity(0.5)
+        case .error:    return .red
+        }
     }
 }
 

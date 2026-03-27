@@ -49,8 +49,8 @@ extension Color {
     /// Border: #333333
     static let fieldBorder = Color(hex: "333333")
 
-    /// Success green: #34C759
-    static let statusGreen = Color(hex: "34C759")
+    /// Success green: #5AD87A
+    static let statusGreen = Color(hex: "5AD87A")
 
     /// Connected pill background: #1a2233
     static let connectedPillBackground = Color(hex: "1a2233")

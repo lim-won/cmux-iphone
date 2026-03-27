@@ -465,6 +465,17 @@ class WatchViewState: ObservableObject {
         UserDefaults.standard.removeObject(forKey: "watch_pending_permission")
     }
 
+    // MARK: - Clear terminal
+
+    func clearTerminal(sessionId: String? = nil) {
+        let sid = sessionId ?? activeSession?.id
+        if let sid, let idx = sessionIndex(for: sid) {
+            sessions[idx].terminalLines.removeAll()
+        }
+        // Also clear flat list
+        terminalLines.removeAll()
+    }
+
     // MARK: - Voice command (direct to bridge)
 
     func sendVoiceCommand(_ text: String, sessionId: String? = nil) {

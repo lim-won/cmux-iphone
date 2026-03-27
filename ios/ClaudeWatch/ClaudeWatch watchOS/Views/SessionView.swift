@@ -9,7 +9,7 @@ struct SessionView: View {
     private let cursorTimer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        ZStack {
             VStack(spacing: 0) {
                 // Top bar — agent icon + folder name
                 HStack(spacing: 4) {
@@ -61,20 +61,41 @@ struct SessionView: View {
             }
             .background(Theme.Background.primary)
 
-            // FAB mic
-            Button { showVoiceInput = true } label: {
-                ZStack {
-                    Circle()
-                        .fill(Theme.Text.primary.opacity(0.75))
-                        .frame(width: 28, height: 28)
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(.black)
+            // FAB buttons
+            HStack {
+                // Clear button (left)
+                Button { session.clearTerminal(sessionId: agentSession.id) } label: {
+                    ZStack {
+                        Circle()
+                            .fill(Theme.Text.secondary.opacity(0.5))
+                            .frame(width: 28, height: 28)
+                        Image(systemName: "trash")
+                            .font(.system(size: 11))
+                            .foregroundColor(.white)
+                    }
+                    .shadow(color: .black.opacity(0.6), radius: 6, y: 3)
                 }
-                .shadow(color: .black.opacity(0.6), radius: 6, y: 3)
+                .buttonStyle(.plain)
+                .padding(.leading, 16)
+
+                Spacer()
+
+                // Mic button (right)
+                Button { showVoiceInput = true } label: {
+                    ZStack {
+                        Circle()
+                            .fill(Theme.Text.primary.opacity(0.75))
+                            .frame(width: 28, height: 28)
+                        Image(systemName: "mic.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.black)
+                    }
+                    .shadow(color: .black.opacity(0.6), radius: 6, y: 3)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 16)
             }
-            .buttonStyle(.plain)
-            .padding(.trailing, 16)
+            .frame(maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, 16)
         }
         .ignoresSafeArea(edges: .bottom)
@@ -97,10 +118,17 @@ struct SessionView: View {
     private func terminalLine(_ line: TerminalLine) -> some View {
         Text(line.text)
             .font(.system(size: 11, design: .monospaced))
-            .foregroundColor(colorFor(line.type))
+            .foregroundColor(colorForLine(line))
             .lineLimit(4)
             .truncationMode(.tail)
             .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func colorForLine(_ line: TerminalLine) -> Color {
+        if line.type == .output && line.text.hasPrefix("  + ") {
+            return Theme.Accent.success
+        }
+        return colorFor(line.type)
     }
 
     private var isThinking: Bool {

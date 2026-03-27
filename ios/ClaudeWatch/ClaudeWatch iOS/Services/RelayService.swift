@@ -410,6 +410,18 @@ final class RelayService: ObservableObject {
         }
     }
 
+    // MARK: - Clear terminal
+
+    func clearTerminal(sessionId: String? = nil) {
+        if let sid = sessionId,
+           let idx = sessions.firstIndex(where: { $0.id == sid }) {
+            sessions[idx].terminalLines.removeAll()
+        }
+        terminalBuffer.clear()
+        recentTerminalLines = []
+        isThinking = false
+    }
+
     // MARK: - Helpers (approval)
 
     private func clearPendingApproval(for approval: ApprovalRequest) {
