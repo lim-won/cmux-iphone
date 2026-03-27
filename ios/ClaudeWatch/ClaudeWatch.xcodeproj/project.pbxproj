@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -24,7 +24,7 @@
 		3567322839F9B7C8982E2CC2 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C9A1C1C5F307901694336 /* OnboardingView.swift */; };
 		454D80BFFEC02FEB399BCC72 /* CodexLogo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 234623B6E982F519BDC3EF6D /* CodexLogo.swift */; };
 		45ACE32BBF4381937CE61A77 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0710616CD3202EEE6E23496 /* SpeechService.swift */; };
-		49032A4666354165742750BC /* ClaudeWatchWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 303943189CE302F154CA350B /* ClaudeWatchWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		49032A4666354165742750BC /* Agent Watch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 303943189CE302F154CA350B /* Agent Watch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5878B94D3BB58C30DCBFB3AF /* SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 863F358F393A686BB368B2B0 /* SessionState.swift */; };
 		5980D58F184DBB03B1CE3D5C /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7286024A0F74A978473A0CF0 /* PairingView.swift */; };
 		5D30734C7D21934029F59BBB /* SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 863F358F393A686BB368B2B0 /* SessionState.swift */; };
@@ -72,7 +72,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				49032A4666354165742750BC /* ClaudeWatchWatch.app in Embed Watch Content */,
+				49032A4666354165742750BC /* Agent Watch.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -87,8 +87,8 @@
 		103838389D179B4E7BB59FE9 /* StatusDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusDashboard.swift; sourceTree = "<group>"; };
 		1CD1289B8157BD282826FB50 /* BridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeClient.swift; sourceTree = "<group>"; };
 		234623B6E982F519BDC3EF6D /* CodexLogo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLogo.swift; sourceTree = "<group>"; };
-		2B831D2BFB4BE9A940187EF9 /* ClaudeWatch.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ClaudeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		303943189CE302F154CA350B /* ClaudeWatchWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaudeWatchWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2B831D2BFB4BE9A940187EF9 /* ClaudeWatch.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; name = ClaudeWatch.app; path = "Agent Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		303943189CE302F154CA350B /* Agent Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Agent Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		378B120DB4409D4BE7E1578E /* ClaudeWatchWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeWatchWatchApp.swift; sourceTree = "<group>"; };
 		3A8D708937263FAAC2A40CCA /* OutputRingBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRingBuffer.swift; sourceTree = "<group>"; };
 		3B42442B8133715613F1B33C /* ApprovalRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalRequest.swift; sourceTree = "<group>"; };
@@ -212,7 +212,7 @@
 			isa = PBXGroup;
 			children = (
 				2B831D2BFB4BE9A940187EF9 /* ClaudeWatch.app */,
-				303943189CE302F154CA350B /* ClaudeWatchWatch.app */,
+				303943189CE302F154CA350B /* Agent Watch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -303,7 +303,7 @@
 			packageProductDependencies = (
 			);
 			productName = ClaudeWatchWatch;
-			productReference = 303943189CE302F154CA350B /* ClaudeWatchWatch.app */;
+			productReference = 303943189CE302F154CA350B /* Agent Watch.app */;
 			productType = "com.apple.product-type.application";
 		};
 		C84EB2FEED987DB13A41B90F /* ClaudeWatch */ = {
@@ -345,7 +345,6 @@
 			);
 			mainGroup = 7E45F0490F68854FB57BC594;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -464,8 +463,13 @@
 		607340BA1661D7F454835FD3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "arm64 arm64e arm64_32";
+				ARCHS = (
+					arm64,
+					arm64e,
+					arm64_32,
+				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = T7HT4U4666;
 				"EXCLUDED_ARCHS[sdk=watchsimulator*]" = arm64e;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ClaudeWatch watchOS/Info.plist";
@@ -481,8 +485,13 @@
 		A1944F1272FF6484EEC3FA34 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "arm64 arm64e arm64_32";
+				ARCHS = (
+					arm64,
+					arm64e,
+					arm64_32,
+				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = T7HT4U4666;
 				"EXCLUDED_ARCHS[sdk=watchsimulator*]" = arm64e;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ClaudeWatch watchOS/Info.plist";

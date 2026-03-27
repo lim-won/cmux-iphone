@@ -74,8 +74,8 @@ struct SessionView: View {
                 .shadow(color: .black.opacity(0.6), radius: 6, y: 3)
             }
             .buttonStyle(.plain)
-            .padding(.trailing, 8)
-            .padding(.bottom, 8)
+            .padding(.trailing, 16)
+            .padding(.bottom, 16)
         }
         .ignoresSafeArea(edges: .bottom)
         .sheet(item: $session.pendingApproval) { request in
