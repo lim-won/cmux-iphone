@@ -2,7 +2,7 @@
   <img src="logo.png" width="140" alt="Claude Logo" />
 </p>
 
-<h1 align="center"><strong>Claude Watch</strong></h1>
+<h1 align="center"><strong>Agent Watch</strong></h1>
 
 <p align="center">
   Control Claude Code from your Apple Watch.<br/>
@@ -100,7 +100,7 @@ node server.js
 You'll see:
 ```
 ╔═══════════════════════════════════════╗
-║        CLAUDE WATCH BRIDGE            ║
+║        AGENT WATCH BRIDGE             ║
 ╠═══════════════════════════════════════╣
 ║  Pairing Code:  ******                ║
 ║  IP Address:    192.168.1.4           ║

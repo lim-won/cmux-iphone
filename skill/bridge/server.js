@@ -1066,19 +1066,50 @@ async function handleCommand(req, res) {
       targetSession = sessions.get(sessionId);
       if (targetSession && !targetSession.ptyProcess) {
         // Session exists but has no PTY (external hook-created session).
-        // Attach to the existing session so the watch can interact with the live thread.
-        log("info", `Session ${sessionId} has no PTY — attaching to ${targetSession.agent} in ${targetSession.cwd}`);
-        const proc = attachPtyToSession(targetSession);
-        if (!proc) {
+        // Run the prompt via CLI in non-interactive mode — hooks will forward output.
+        const promptText = command.replace(/\n$/, "").trim();
+        if (!promptText) {
+          return jsonResponse(res, 400, { error: "Empty command" });
+        }
+
+        const bin = targetSession.agent === "codex" ? CODEX_BIN : CLAUDE_BIN;
+        if (!bin) {
           return jsonResponse(res, 500, { error: `No binary found for ${targetSession.agent}` });
         }
-        setTimeout(() => {
-          if (targetSession.ptyProcess) {
-            targetSession.ptyProcess.stdin.write(command);
-            log("info", `Command injected into session ${sessionId} (${command.length} chars)`);
+
+        const args = targetSession.agent === "codex"
+          ? ["exec", promptText]
+          : ["-p", promptText, "--continue"];
+
+        log("info", `Running ${targetSession.agent} prompt in ${targetSession.cwd}: "${promptText.slice(0, 80)}"`);
+
+        targetSession.state = "running";
+        pushSseEvent("session", { state: "running", agent: targetSession.agent, cwd: targetSession.cwd, folderName: targetSession.folderName }, sessionId);
+
+        const proc = childSpawn(bin, args, {
+          cwd: targetSession.cwd,
+          env: { ...process.env },
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+
+        proc.stdout.on("data", (data) => {
+          const text = data.toString().trim();
+          if (text) pushSseEvent("pty-output", { text }, sessionId);
+        });
+        proc.stderr.on("data", (data) => {
+          const text = data.toString().trim();
+          if (text && !text.includes("tcgetattr")) {
+            pushSseEvent("pty-output", { text }, sessionId);
           }
-        }, 500);
-        return jsonResponse(res, 200, { ok: true, sessionId, agent: targetSession.agent, spawned: true });
+        });
+        proc.on("close", (exitCode) => {
+          log("info", `Prompt process exited (code ${exitCode}) for session ${sessionId}`);
+        });
+        proc.on("error", (err) => {
+          log("error", `Prompt process error for session ${sessionId}: ${err.message}`);
+        });
+
+        return jsonResponse(res, 200, { ok: true, sessionId, agent: targetSession.agent, prompt: true });
       }
       if (!targetSession) {
         return jsonResponse(res, 404, { error: "No session with that ID" });
@@ -1431,7 +1462,7 @@ async function startServer() {
   // Bonjour
   bonjourInstance = new Bonjour();
   bonjourService = bonjourInstance.publish({
-    name: `Claude Watch Bridge (${os.hostname()})`,
+    name: `Agent Watch Bridge (${os.hostname()})`,
     type: "claude-watch",
     protocol: "tcp",
     port: boundPort,
@@ -1467,7 +1498,7 @@ async function startServer() {
   const agentLine = agents.length ? agents.join(" + ") : "none";
   console.log("");
   console.log("╔═══════════════════════════════════════╗");
-  console.log("║        CLAUDE WATCH BRIDGE            ║");
+  console.log("║        AGENT WATCH BRIDGE             ║");
   console.log("╠═══════════════════════════════════════╣");
   console.log(`║  Pairing Code:  ${code}                ║`);
   console.log(`║  IP Address:    ${lanIP.padEnd(20)}║`);

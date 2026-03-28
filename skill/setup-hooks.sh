@@ -1,5 +1,5 @@
 #!/bin/bash
-# Claude Watch — Install global hooks so ALL Claude Code sessions stream to the bridge.
+# Agent Watch — Install global hooks so ALL Claude Code sessions stream to the bridge.
 #
 # Usage: ./setup-hooks.sh [port]
 #   port: bridge server port (default: 7860)
@@ -52,16 +52,16 @@ if changed:
         del settings['hooks']
     with open('$SETTINGS', 'w') as f:
         json.dump(settings, f, indent=2)
-    print('Claude Watch hooks removed from $SETTINGS')
+    print('Agent Watch hooks removed from $SETTINGS')
 else:
-    print('No Claude Watch hooks found.')
+    print('No Agent Watch hooks found.')
 "
   exit 0
 fi
 
 # ── Install mode ─────────────────────────────────────────────────────────────
 
-echo "Installing Claude Watch hooks..."
+echo "Installing Agent Watch hooks..."
 echo "  Bridge URL: ${BRIDGE_URL}"
 echo "  Settings:   ${SETTINGS}"
 echo ""
@@ -189,7 +189,7 @@ if command -v codex &>/dev/null; then
 
   cat > "$WRAPPER" << 'WRAPPER_EOF'
 #!/bin/bash
-# codex-watch: Runs Codex and streams events to Claude Watch bridge.
+# codex-watch: Runs Codex and streams events to Agent Watch bridge.
 # Drop-in replacement for `codex` — use `codex-watch` instead.
 BRIDGE_URL="http://127.0.0.1:${CLAUDE_WATCH_PORT:-7860}"
 
