@@ -1,6 +1,6 @@
 import Foundation
 
-/// HTTP client for communicating with the Claude Watch bridge server.
+/// HTTP client for communicating with the Agent Watch bridge server.
 final class BridgeClient {
 
     // MARK: - Errors

@@ -1,7 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-// MARK: - Claude Watch Complication (WidgetKit)
+// MARK: - Agent Watch Complication (WidgetKit)
 
 /// Timeline entry representing the current state of the Claude session.
 struct ClaudeWatchEntry: TimelineEntry {

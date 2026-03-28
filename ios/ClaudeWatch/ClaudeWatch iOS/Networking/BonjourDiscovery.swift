@@ -3,6 +3,7 @@ import Network
 
 /// Discovers `_claude-watch._tcp` services on the local network using NWBrowser.
 /// Requires the local network privacy entitlement on iOS 14+.
+/// (Service type kept as `_claude-watch._tcp` for backward compatibility with bridge.)
 final class BonjourDiscovery: ObservableObject {
 
     // MARK: - Types
