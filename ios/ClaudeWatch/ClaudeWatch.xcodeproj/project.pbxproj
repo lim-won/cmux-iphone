@@ -36,6 +36,7 @@
 		7C266D4E98C89230997C6714 /* AgentSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6346DB31D379397056FB2AEC /* AgentSession.swift */; };
 		7CFCC520E5AF353A95FA0A70 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF877E177FAD26914DAA78D /* HapticManager.swift */; };
 		7D2835EE9D177222B72C6CDB /* ConnectionStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2084D859AEDF739A7B8CD49 /* ConnectionStatusView.swift */; };
+		F602A33667E96871A0821A28 /* ApprovalQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71CE48BDDE309E7D4EB465F6 /* ApprovalQueueView.swift */; };
 		7DD47601D714A440594BF768 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7EA2FE39681F6542823D544C /* Assets.xcassets */; };
 		8C1280014A4BBFC45C6D6CBF /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FBA67A3544CEF418CF023C /* WatchSessionManager.swift */; };
 		8D2448B3D5478CAB0231F8E2 /* Connections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A3E7F3161486817A237410B /* Connections.swift */; };
@@ -117,6 +118,7 @@
 		BC84B5BA0FD69C5758F6CB21 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		D1DF2BEEDD4C382E734A9998 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		D2084D859AEDF739A7B8CD49 /* ConnectionStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatusView.swift; sourceTree = "<group>"; };
+		71CE48BDDE309E7D4EB465F6 /* ApprovalQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalQueueView.swift; sourceTree = "<group>"; };
 		D315314A06584F20A95E7DB6 /* WatchMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchMessage.swift; sourceTree = "<group>"; };
 		E05A5819BA45145C8992456D /* ComplicationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplicationProvider.swift; sourceTree = "<group>"; };
 		F237360F4AF9396B7B3C1881 /* AgentIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIcon.swift; sourceTree = "<group>"; };
@@ -273,6 +275,7 @@
 			isa = PBXGroup;
 			children = (
 				D2084D859AEDF739A7B8CD49 /* ConnectionStatusView.swift */,
+				71CE48BDDE309E7D4EB465F6 /* ApprovalQueueView.swift */,
 				7286024A0F74A978473A0CF0 /* PairingView.swift */,
 				BC84B5BA0FD69C5758F6CB21 /* SettingsView.swift */,
 			);
@@ -393,6 +396,7 @@
 				2FF16E65BC48434288D37C29 /* CodexLogo.swift in Sources */,
 				D73C73D521E0F95B2C18CC7B /* Color+Hex.swift in Sources */,
 				7D2835EE9D177222B72C6CDB /* ConnectionStatusView.swift in Sources */,
+				F602A33667E96871A0821A28 /* ApprovalQueueView.swift in Sources */,
 				26498CDC656411ABB0C94F7B /* NotificationService.swift in Sources */,
 				2D1F77586019751BCB13FF28 /* OutputRingBuffer.swift in Sources */,
 				5980D58F184DBB03B1CE3D5C /* PairingView.swift in Sources */,

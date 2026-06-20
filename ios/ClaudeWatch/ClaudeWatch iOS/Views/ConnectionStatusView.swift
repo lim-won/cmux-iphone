@@ -56,6 +56,7 @@ struct ConnectionStatusView: View {
 
     @State private var path = NavigationPath()
     @State private var showSettings = false
+    @State private var showApprovalQueue = false
     @State private var renameTarget: SavedConnection?
     @State private var renameText = ""
     @State private var deleteTarget: SavedConnection?
@@ -74,6 +75,24 @@ struct ConnectionStatusView: View {
             .navigationTitle("오피스")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if relayService.pendingApprovalCount > 0 {
+                        Button {
+                            showApprovalQueue = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "bell.badge.fill")
+                                    .foregroundStyle(Color.claudeAmber)
+                                Text("\(relayService.pendingApprovalCount)")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.denyRed, in: Capsule())
+                            }
+                        }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showSettings = true
@@ -101,6 +120,9 @@ struct ConnectionStatusView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsView().environmentObject(relayService)
+        }
+        .sheet(isPresented: $showApprovalQueue) {
+            ApprovalQueueView().environmentObject(relayService)
         }
         .alert("오피스 이름 변경", isPresented: Binding(
             get: { renameTarget != nil },
@@ -1083,7 +1105,7 @@ private struct SessionDetailView: View {
             ForEach(Array(approval.options.enumerated()), id: \.element.id) { index, option in
                 let color = colorForOption(index, total: approval.options.count)
                 Button {
-                    relayService.respondToApprovalWithOption(option.label, index: index)
+                    relayService.respond(to: approval, optionLabel: option.label, index: index)
                     promptText = ""
                 } label: {
                     HStack(spacing: 8) {
@@ -1130,9 +1152,9 @@ private struct SessionDetailView: View {
                             .stroke(Color.hairline, lineWidth: 1)
                     )
                     .focused($isPromptFocused)
-                    .onSubmit { submitPromptText() }
+                    .onSubmit { submitPromptText(approval) }
 
-                Button { submitPromptText() } label: {
+                Button { submitPromptText(approval) } label: {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 24))
                         .foregroundStyle(promptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -1150,10 +1172,10 @@ private struct SessionDetailView: View {
         )
     }
 
-    private func submitPromptText() {
+    private func submitPromptText(_ approval: ApprovalRequest) {
         let text = promptText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        relayService.respondToApprovalWithOption(text, index: -1)
+        relayService.respond(to: approval, optionLabel: text, index: -1)
         promptText = ""
         isPromptFocused = false
     }

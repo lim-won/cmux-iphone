@@ -33,7 +33,15 @@ final class RelayService: ObservableObject {
     @Published private(set) var sessions: [AgentSession] = []
 
     // Permission prompt state (uses shared ApprovalRequest model)
+    // `pendingApproval` is the head of the queue, kept for existing per-session UI.
     @Published var pendingApproval: ApprovalRequest? = nil
+    /// Global approval queue across all sessions of the active Mac. Drives the
+    /// app-wide badge + queue sheet.
+    @Published private(set) var approvalQueue: [ApprovalRequest] = []
+    var pendingApprovalCount: Int { approvalQueue.count }
+    /// permissionIds we've already answered/cleared — makes responses single-use
+    /// and lets us ignore the bridge's reconnect re-sends of resolved approvals.
+    private var resolvedPermissionIds: Set<String> = []
 
     // cmux mirror — populated when the connected Mac runs cmux.
     @Published private(set) var cmuxAvailable: Bool = false
@@ -174,6 +182,9 @@ final class RelayService: ObservableObject {
         elapsedSeconds = 0
         recentTerminalLines = []
         connectionState = .disconnected
+        pendingApproval = nil
+        approvalQueue = []
+        resolvedPermissionIds = []
 
         UserDefaults.standard.removeObject(forKey: "paired_machine_name")
         UserDefaults.standard.removeObject(forKey: "last_connected")
@@ -199,6 +210,8 @@ final class RelayService: ObservableObject {
         recentTerminalLines = []
         terminalBuffer.clear()
         pendingApproval = nil
+        approvalQueue = []
+        resolvedPermissionIds = []
         isThinking = false
         elapsedSeconds = 0
 
@@ -281,6 +294,8 @@ final class RelayService: ObservableObject {
         recentTerminalLines = []
         terminalBuffer.clear()
         pendingApproval = nil
+        approvalQueue = []
+        resolvedPermissionIds = []
         connectionState = .disconnected
 
         sessionManager.updateApplicationContext(with: SessionState.disconnected)
@@ -346,6 +361,9 @@ final class RelayService: ObservableObject {
 
         case "permission-request":
             handlePermissionRequest(data)
+
+        case "permission-cleared":
+            handlePermissionCleared(data)
 
         case "session":
             handleSessionEvent(data)
@@ -452,15 +470,37 @@ final class RelayService: ObservableObject {
 
         print("[RelayService] Permission requested: \(toolName) — \(desc)")
 
+        let reason = toolInput["reason"] as? String ?? (json["reason"] as? String)
+        let session = sessionId.flatMap { sid in sessions.first(where: { $0.id == sid }) }
         let approval = ApprovalRequest(
             permissionId: permissionId,
             toolName: toolName,
             actionSummary: desc,
             question: question,
-            options: options
+            options: options,
+            sessionId: sessionId,
+            macName: machineName,
+            cwd: session?.cwd,
+            agent: session?.agent.rawValue ?? (json["source"] as? String),
+            reason: reason
         )
 
-        pendingApproval = approval
+        // Ignore re-sends of an approval we've already answered/cleared.
+        if let pid = approval.permissionId, resolvedPermissionIds.contains(pid) { return }
+
+        // De-dupe: the bridge re-sends pending approvals on every SSE reconnect.
+        if let idx = approvalQueue.firstIndex(where: { $0.dedupeKey == approval.dedupeKey }) {
+            approvalQueue[idx] = approval               // refresh in place
+            pendingApproval = approvalQueue.first
+            if let sid = sessionId, let sIdx = sessions.firstIndex(where: { $0.id == sid }) {
+                sessions[sIdx].pendingApproval = approval
+                sessions[sIdx].activity = .waitingApproval
+            }
+            return                                       // no new haptic / notification
+        }
+
+        approvalQueue.append(approval)
+        pendingApproval = approvalQueue.first
 
         // Track on specific session
         if let sid = sessionId, let idx = sessions.firstIndex(where: { $0.id == sid }) {
@@ -488,16 +528,21 @@ final class RelayService: ObservableObject {
 
     // MARK: - Permission response
 
-    /// Respond to approval with a selected option (dynamic options from server).
-    func respondToApprovalWithOption(_ optionLabel: String, index: Int) {
-        guard let approval = pendingApproval else { return }
+    /// Respond to a SPECIFIC approval with a selected option (queue-aware).
+    /// Single-use: a permissionId can only be answered once, even if the card
+    /// is shown in both the queue sheet and a session detail.
+    func respond(to approval: ApprovalRequest, optionLabel: String, index: Int) {
         let permissionId = approval.permissionId ?? ""
+        if !permissionId.isEmpty {
+            if resolvedPermissionIds.contains(permissionId) { return } // already answered
+            resolvedPermissionIds.insert(permissionId)
+        }
 
         let isLast = index == approval.options.count - 1
         UIImpactFeedbackGenerator(style: isLast ? .heavy : .medium).impactOccurred()
 
         if approval.question != nil {
-            // AskUserQuestion: send the option label
+            // AskUserQuestion: send the option label (index -1 == freeform text)
             Task {
                 try? await bridgeClient.respondToApprovalWithOption(
                     requestId: permissionId, optionLabel: optionLabel, index: index
@@ -517,6 +562,24 @@ final class RelayService: ObservableObject {
         terminalBuffer.append(line)
         recentTerminalLines = terminalBuffer.getLast(15)
 
+        clearPendingApproval(for: approval)
+    }
+
+    /// Back-compat: respond to the current head of the queue.
+    func respondToApprovalWithOption(_ optionLabel: String, index: Int) {
+        guard let approval = pendingApproval else { return }
+        respond(to: approval, optionLabel: optionLabel, index: index)
+    }
+
+    /// Explicit "allow for this session" — adds a permission rule so it won't ask again.
+    func respondAllowSession(_ approval: ApprovalRequest) {
+        let permissionId = approval.permissionId ?? ""
+        if !permissionId.isEmpty {
+            if resolvedPermissionIds.contains(permissionId) { return }
+            resolvedPermissionIds.insert(permissionId)
+        }
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        Task { try? await bridgeClient.respondToApprovalAllowAll(requestId: permissionId) }
         clearPendingApproval(for: approval)
     }
 
@@ -556,9 +619,28 @@ final class RelayService: ObservableObject {
     // MARK: - Helpers (approval)
 
     private func clearPendingApproval(for approval: ApprovalRequest) {
-        pendingApproval = nil
+        approvalQueue.removeAll { $0.dedupeKey == approval.dedupeKey }
+        pendingApproval = approvalQueue.first
         for idx in sessions.indices {
             if sessions[idx].pendingApproval?.permissionId == approval.permissionId {
+                sessions[idx].pendingApproval = nil
+                if sessions[idx].activity == .waitingApproval {
+                    sessions[idx].activity = .running
+                }
+            }
+        }
+    }
+
+    /// Server told us an approval was resolved/timed-out elsewhere (or on another
+    /// device) — drop it from the queue + sessions so the card disappears.
+    private func handlePermissionCleared(_ data: String) {
+        guard let json = parseJSON(data),
+              let permissionId = json["permissionId"] as? String else { return }
+        resolvedPermissionIds.insert(permissionId) // ignore any late re-send
+        approvalQueue.removeAll { $0.permissionId == permissionId }
+        pendingApproval = approvalQueue.first
+        for idx in sessions.indices {
+            if sessions[idx].pendingApproval?.permissionId == permissionId {
                 sessions[idx].pendingApproval = nil
                 if sessions[idx].activity == .waitingApproval {
                     sessions[idx].activity = .running
