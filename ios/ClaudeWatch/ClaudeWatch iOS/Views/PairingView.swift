@@ -8,7 +8,9 @@ struct PairingView: View {
 
     @State private var code: String = ""
     @State private var ipAddress: String = ""
-    @State private var showManualIP: Bool = false
+    // IP + code entry is the default — Bonjour auto-discovery doesn't cross
+    // Tailscale/remote networks, and pairing always needs the IP anyway.
+    @State private var showManualIP: Bool = true
     @FocusState private var isCodeFocused: Bool
     @FocusState private var isIPFocused: Bool
     @State private var shakeOffset: CGFloat = 0
@@ -73,9 +75,11 @@ struct PairingView: View {
 
     private var ipEntrySection: some View {
         HStack(spacing: 8) {
-            TextField("192.168.1.x", text: $ipAddress)
-                .keyboardType(.decimalPad)
-                .font(.system(size: 17, weight: .semibold, design: .monospaced))
+            TextField("192.168.1.x 또는 호스트명", text: $ipAddress)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .font(.system(size: 16, weight: .semibold, design: .monospaced))
                 .foregroundStyle(Color.textPrimary)
                 .tint(Color.claudeOrange)
                 .multilineTextAlignment(.center)
@@ -126,7 +130,9 @@ struct PairingView: View {
             }
         }
         .onAppear {
-            if !showManualIP {
+            if showManualIP {
+                if ipAddress.isEmpty { isIPFocused = true } else { isCodeFocused = true }
+            } else {
                 isCodeFocused = true
             }
         }
@@ -266,17 +272,26 @@ struct PairingView: View {
                 }
             } catch let error as BridgeClient.BridgeError {
                 await MainActor.run { handlePairingError(error) }
+            } catch let error as BonjourDiscovery.DiscoveryError {
+                await MainActor.run {
+                    switch error {
+                    case .permissionDenied:
+                        showPairingError("로컬 네트워크 접근이 꺼져 있습니다. 설정 → 개인정보 보호 및 보안 → 로컬 네트워크에서 Agent iPhone을 켜고 앱을 재실행하세요.")
+                    case .noServiceFound:
+                        if !showManualIP {
+                            showManualIP = true
+                            isIPFocused = true
+                        }
+                        showPairingError("브리지를 찾지 못했습니다. IP가 맞는지, Mac에서 브리지가 켜져 있는지 확인하세요.")
+                    case .timeout:
+                        showPairingError("연결 시간 초과. 같은 네트워크/Tailscale 연결을 확인하세요.")
+                    case .browsingFailed(let reason):
+                        showPairingError("연결 실패: \(reason)")
+                    }
+                }
             } catch {
                 await MainActor.run {
-                    let msg = error.localizedDescription
-                    // If auto-discovery failed, suggest manual IP
-                    if msg.contains("noServiceFound") || msg.contains("timed out") || msg.contains("not found") {
-                        showManualIP = true
-                        showPairingError("브리지를 자동으로 찾지 못했습니다. Mac의 IP 주소를 입력하세요.")
-                        isIPFocused = true
-                    } else {
-                        showPairingError("연결 실패: \(msg)")
-                    }
+                    showPairingError("연결 실패: \(error.localizedDescription)")
                 }
             }
         }

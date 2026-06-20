@@ -30,6 +30,7 @@ struct ConnectionStatusView: View {
     @State private var showSettings = false
     @State private var renameTarget: SavedConnection?
     @State private var renameText = ""
+    @State private var deleteTarget: SavedConnection?
 
     private var connectedCount: Int {
         (store.activeID != nil || store.connections.isEmpty)
@@ -81,6 +82,26 @@ struct ConnectionStatusView: View {
             }
             Button("취소", role: .cancel) { renameTarget = nil }
         }
+        .alert("오피스 삭제", isPresented: Binding(
+            get: { deleteTarget != nil },
+            set: { if !$0 { deleteTarget = nil } }
+        )) {
+            Button("삭제", role: .destructive) {
+                if let t = deleteTarget {
+                    if t.id == store.activeID {
+                        relayService.forgetActive()
+                    } else {
+                        store.remove(t.id)
+                    }
+                }
+                deleteTarget = nil
+            }
+            Button("취소", role: .cancel) { deleteTarget = nil }
+        } message: {
+            if let t = deleteTarget {
+                Text("\(t.name) (\(t.host):\(t.port)) 연결을 삭제할까요?")
+            }
+        }
     }
 
     // MARK: Offices list
@@ -117,6 +138,9 @@ struct ConnectionStatusView: View {
                                 renameText = conn.name
                                 renameTarget = conn
                             } label: { Label("이름 변경", systemImage: "pencil") }
+                            Button(role: .destructive) {
+                                deleteTarget = conn
+                            } label: { Label("삭제", systemImage: "trash") }
                         }
                     }
                 }

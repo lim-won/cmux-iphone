@@ -67,23 +67,47 @@ final class BonjourDiscovery: ObservableObject {
 
     /// Tries to connect to a specific IP on ports 7860-7869.
     func discoverAtIP(_ ip: String) async throws -> DiscoveredService {
+        // Strip an accidental scheme or :port the user may have typed.
+        var host = ip.trimmingCharacters(in: .whitespacesAndNewlines)
+        host = host.replacingOccurrences(of: "http://", with: "")
+                   .replacingOccurrences(of: "https://", with: "")
+        if let slash = host.firstIndex(of: "/") { host = String(host[..<slash]) }
+        if let colon = host.firstIndex(of: ":") { host = String(host[..<colon]) }
+
+        var lastError: Error?
         for port in UInt16(7860)...UInt16(7869) {
-            let url = URL(string: "http://\(ip):\(port)/status")!
+            guard let url = URL(string: "http://\(host):\(port)/status") else { continue }
             var request = URLRequest(url: url)
-            request.timeoutInterval = 3
+            request.timeoutInterval = 8
             do {
                 let (_, response) = try await URLSession.shared.data(for: request)
                 if let http = response as? HTTPURLResponse, http.statusCode == 200 {
                     return DiscoveredService(
-                        name: ip,
-                        host: ip,
+                        name: host,
+                        host: host,
                         port: port,
-                        machineName: ip
+                        machineName: host
                     )
                 }
             } catch {
+                lastError = error
+                // ATS (-1022) blocks identically on every port — stop scanning.
+                if (error as? URLError)?.errorCode == -1022 { break }
                 continue
             }
+        }
+        // Surface the real reason so the UI can show it instead of a generic message.
+        if let urlErr = lastError as? URLError {
+            let code = urlErr.errorCode
+            if code == -1022 {
+                throw DiscoveryError.browsingFailed("ATS가 평문 HTTP를 차단했습니다 (-1022). 앱 빌드의 ATS 설정을 확인하세요.")
+            }
+            // Local Network privacy denial commonly surfaces as -1009 / "not permitted".
+            let lower = urlErr.localizedDescription.lowercased()
+            if lower.contains("not permitted") || lower.contains("local network") || code == -1009 {
+                throw DiscoveryError.permissionDenied
+            }
+            throw DiscoveryError.browsingFailed("\(urlErr.localizedDescription) [\(code)]")
         }
         throw DiscoveryError.noServiceFound
     }

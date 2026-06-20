@@ -246,6 +246,13 @@ final class BridgeClient {
         do {
             return try await session.data(for: request)
         } catch {
+            // Preserve the real reason in the device log (e.g. ATS -1022) before
+            // collapsing to the coarse BridgeError the UI consumes.
+            if let u = error as? URLError {
+                print("[BridgeClient] request failed: code=\(u.errorCode) \(u.localizedDescription) url=\(request.url?.absoluteString ?? "?")")
+            } else {
+                print("[BridgeClient] request failed: \(error)")
+            }
             throw BridgeError.networkError
         }
     }
