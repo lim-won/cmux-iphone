@@ -6,6 +6,7 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import { spawn as childSpawn } from "node:child_process";
 import { Bonjour } from "bonjour-service";
+import * as cmux from "./cmux.js";
 
 // ---------------------------------------------------------------------------
 // Logging (must be defined before use)
@@ -62,7 +63,10 @@ if (CODEX_BIN) {
 
 const PORT_RANGE_START = 7860;
 const PORT_RANGE_END = 7869;
-const PAIRING_CODE_TTL_MS = 5 * 60 * 1000;
+const PAIRING_CODE_TTL_MS = 24 * 60 * 60 * 1000; // 24h (personal use — avoid chasing rotating codes)
+// Fixed pairing code (personal use): same code survives restarts AND re-pairing,
+// so you never chase a rotating code. Change it via WATCH_PAIR_CODE env or here.
+const FIXED_PAIRING_CODE = process.env.WATCH_PAIR_CODE || "******";
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const RATE_LIMIT_MAX_ATTEMPTS = 5;
 const SSE_HEARTBEAT_INTERVAL_MS = 10_000;
@@ -74,6 +78,15 @@ const CODEX_SESSION_SCAN_LIMIT = 25;
 const CODEX_SESSION_ROOT = path.join(os.homedir(), ".codex", "sessions");
 const CODEX_LOG_FILE = path.join(os.homedir(), ".codex", "log", "codex-tui.log");
 const BRIDGE_ID = crypto.randomUUID();
+
+// Mobile web client (served at GET /) — lets an iPhone use the bridge from
+// Safari with no app install.
+let WEB_CLIENT_HTML = "<!doctype html><title>Agent Watch</title><h1>web client missing</h1>";
+try {
+  WEB_CLIENT_HTML = fs.readFileSync(new URL("./webclient.html", import.meta.url), "utf-8");
+} catch {
+  /* webclient.html optional */
+}
 
 // ---------------------------------------------------------------------------
 // State
@@ -129,10 +142,10 @@ let bonjourService = null;
 // ---------------------------------------------------------------------------
 
 function generatePairingCode() {
-  const code = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+  const code = FIXED_PAIRING_CODE || crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
   pairingCode = code;
-  pairingCodeExpiresAt = Date.now() + PAIRING_CODE_TTL_MS;
-  log("info", `Pairing code generated: ${code} (expires in 5 minutes)`);
+  pairingCodeExpiresAt = FIXED_PAIRING_CODE ? Number.MAX_SAFE_INTEGER : Date.now() + PAIRING_CODE_TTL_MS;
+  log("info", `Pairing code generated: ${code}${FIXED_PAIRING_CODE ? " (fixed)" : ""}`);
   return code;
 }
 
@@ -664,6 +677,33 @@ function resolveCodexSyntheticPermission(permissionId, selectedOption, optionInd
   const slot = sessions.get(synthetic.sessionId);
   if (!slot) return false;
 
+  // Preferred: answer the approval by typing into the LIVE codex cmux surface,
+  // instead of attaching a second process via `codex resume`.
+  if (cmux.cmuxAvailable()) {
+    const idx = Number.isInteger(optionIndex) ? optionIndex : -1;
+    const proceed = idx === 0 || /^yes,?\s*proceed/i.test(String(selectedOption || ""));
+    const dontAsk = synthetic.optionCount === 3
+      && (idx === 1 || /^yes,?\s*don't ask again/i.test(String(selectedOption || "")));
+    const surface = cmux.resolveSurface(slot.cwd, "codex");
+    if (surface) {
+      try {
+        if (proceed) {
+          cmux.sendChars(surface, "y");
+        } else if (dontAsk) {
+          cmux.sendChars(surface, "2");
+          cmux.sendKey(surface, "enter");
+        } else {
+          cmux.sendKey(surface, "escape"); // deny / cancel
+        }
+        clearCodexSyntheticPermissionForSession(synthetic.sessionId, "resolved");
+        log("info", `cmux codex approval ${permissionId} -> ${surface} (${slot.cwd})`);
+        return true;
+      } catch (err) {
+        log("warn", `cmux codex approval failed (${err.message}); falling back to PTY`);
+      }
+    }
+  }
+
   const proc = slot.ptyProcess || attachPtyToSession(slot);
   if (!proc || !proc.stdin) return false;
 
@@ -968,8 +1008,10 @@ async function handlePair(req, res) {
 
   // Success
   const token = generateSessionToken();
-  pairingCode = null;
-  pairingCodeExpiresAt = 0;
+  if (!FIXED_PAIRING_CODE) {
+    pairingCode = null;
+    pairingCodeExpiresAt = 0;
+  }
   bridgeState = "connected";
   pushSseEvent("session", { state: "connected" });
 
@@ -978,6 +1020,7 @@ async function handlePair(req, res) {
     token,
     bridgeId: BRIDGE_ID,
     sessionId: BRIDGE_ID, // backward compat
+    machineName: os.hostname(),
     availableAgents: availableAgentsList(),
     sessions: getSessionsSnapshot(),
   });
@@ -1076,6 +1119,25 @@ async function handleCommand(req, res) {
           return jsonResponse(res, 400, { error: "Empty command" });
         }
 
+        // Preferred: type straight into the LIVE cmux agent surface for this
+        // session, so the prompt lands in the interactive Claude/Codex you are
+        // watching (not a detached headless run).
+        if (cmux.cmuxAvailable()) {
+          const surface = cmux.resolveSurface(targetSession.cwd, targetSession.agent);
+          if (surface) {
+            try {
+              cmux.sendPrompt(surface, promptText);
+              log("info", `cmux send -> ${surface} (${targetSession.agent} @ ${targetSession.cwd}): "${promptText.slice(0, 80)}"`);
+              pushSseEvent("pty-output", { text: `> ${promptText}` }, sessionId);
+              return jsonResponse(res, 200, { ok: true, sessionId, agent: targetSession.agent, via: "cmux", surface });
+            } catch (err) {
+              log("warn", `cmux send failed (${err.message}); falling back to detached run`);
+            }
+          } else {
+            log("warn", `No live cmux surface for ${targetSession.agent} @ ${targetSession.cwd}; falling back to detached run`);
+          }
+        }
+
         const bin = targetSession.agent === "codex" ? CODEX_BIN : CLAUDE_BIN;
         if (!bin) {
           return jsonResponse(res, 500, { error: `No binary found for ${targetSession.agent}` });
@@ -1157,7 +1219,11 @@ function handleEvents(req, res) {
   if (req.method !== "GET") {
     return jsonResponse(res, 405, { error: "Method not allowed" });
   }
-  if (!requireAuth(req)) {
+  // SSE: accept the token via header OR ?token= query (Safari EventSource can't set headers).
+  const evUrl = new URL(req.url, `http://${req.headers.host}`);
+  const qToken = evUrl.searchParams.get("token");
+  const tokenOk = requireAuth(req) || (qToken !== null && qToken === sessionToken && sessionToken !== null);
+  if (!tokenOk) {
     return jsonResponse(res, 401, { error: "Unauthorized" });
   }
 
@@ -1341,6 +1407,46 @@ async function handleHookPermission(req, res) {
   return jsonResponse(res, 200, hookResponse);
 }
 
+// Claude Code hooks never carry the assistant's reply text — it only lives in
+// the session transcript (JSONL). The Stop payload gives us transcript_path, so
+// read it and pull the text of the final assistant turn (the actual answer).
+function extractFinalAssistantText(transcriptPath) {
+  if (!transcriptPath || typeof transcriptPath !== "string") return null;
+  let raw;
+  try {
+    raw = fs.readFileSync(transcriptPath, "utf8");
+  } catch (err) {
+    log("warn", `Stop: could not read transcript ${transcriptPath}: ${err.message}`);
+    return null;
+  }
+  const lines = raw.split("\n");
+  // Walk backwards to the most recent assistant message that has text content.
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (entry.type !== "assistant") continue;
+    const content = entry.message?.content;
+    let text = "";
+    if (typeof content === "string") {
+      text = content;
+    } else if (Array.isArray(content)) {
+      text = content
+        .filter((b) => b && b.type === "text" && typeof b.text === "string")
+        .map((b) => b.text)
+        .join("\n");
+    }
+    text = text.trim();
+    if (text) return text;
+  }
+  return null;
+}
+
 async function handleHookStop(req, res) {
   if (req.method !== "POST") return jsonResponse(res, 405, { error: "Method not allowed" });
   let body;
@@ -1352,6 +1458,17 @@ async function handleHookStop(req, res) {
 
   const sid = resolveHookSession(body);
   log("info", `Hook: Stop received${sid ? ` session=${sid}` : ""}`);
+
+  // Attach the final answer text on a real Stop (skip Codex and Notification
+  // pings, which would otherwise re-send the same text and create duplicates).
+  if (body.source !== "codex" && body.hook_event_name !== "Notification" && body.transcript_path) {
+    const assistantText = extractFinalAssistantText(body.transcript_path);
+    if (assistantText) {
+      body.assistantText = assistantText;
+      log("info", `Stop: forwarded final answer (${assistantText.length} chars)`);
+    }
+  }
+
   pushSseEvent("stop", body, sid);
   return jsonResponse(res, 200, { ok: true });
 }
@@ -1392,6 +1509,7 @@ function handleStatus(_req, res) {
     bridgeId: BRIDGE_ID,
     sessionId: BRIDGE_ID, // backward compat
     state: bridgeState,
+    machineName: os.hostname(),
     availableAgents: availableAgentsList(),
     sessions: getSessionsSnapshot(),
     sseClients: sseClients.size,
@@ -1403,11 +1521,17 @@ function handleStatus(_req, res) {
   });
 }
 
+function handleWebClient(_req, res) {
+  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+  res.end(WEB_CLIENT_HTML);
+}
+
 // ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
 const routes = {
+  "GET /": handleWebClient,
   "POST /pair": handlePair,
   "POST /command": handleCommand,
   "GET /events": handleEvents,

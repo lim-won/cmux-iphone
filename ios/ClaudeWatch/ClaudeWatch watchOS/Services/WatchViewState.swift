@@ -181,6 +181,15 @@ class WatchViewState: ObservableObject {
 
         case "stop":
             removeThinkingLine(sessionId: sessionId)
+            // Claude's final answer, forwarded by the bridge from the transcript.
+            if let answer = json["assistantText"] as? String {
+                for raw in answer.components(separatedBy: "\n") {
+                    let cleaned = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !cleaned.isEmpty {
+                        appendLine(TerminalLine(text: String(cleaned.prefix(80)), type: .output), sessionId: sessionId)
+                    }
+                }
+            }
             appendLine(TerminalLine(text: "— stopped —", type: .system), sessionId: sessionId)
             isStreaming = false
             if let sid = sessionId, let idx = sessionIndex(for: sid) {

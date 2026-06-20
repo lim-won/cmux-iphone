@@ -18,6 +18,8 @@ final class RelayService: ObservableObject {
     // MARK: - Published state
 
     @Published private(set) var isPaired: Bool = false
+    /// True while the user is pairing an ADDITIONAL Mac (shows PairingView over the list).
+    @Published var isAddingMac: Bool = false
     @Published private(set) var machineName: String?
     @Published private(set) var modelName: String?
     @Published private(set) var workingDirectory: String?
@@ -96,6 +98,14 @@ final class RelayService: ObservableObject {
         isPaired = true
         connectionState = .connected
 
+        if let token = bridgeClient.token {
+            ConnectionStore.shared.upsert(
+                name: service.machineName ?? service.host,
+                host: service.host, port: Int(service.port), token: token
+            )
+        }
+        isAddingMac = false
+
         UserDefaults.standard.set(service.host, forKey: "bridge_host")
         UserDefaults.standard.set(Int(service.port), forKey: "bridge_port")
         UserDefaults.standard.set(service.machineName, forKey: "paired_machine_name")
@@ -124,6 +134,14 @@ final class RelayService: ObservableObject {
         lastConnected = Date()
         isPaired = true
         connectionState = .connected
+
+        if let token = bridgeClient.token {
+            ConnectionStore.shared.upsert(
+                name: service.machineName ?? service.host,
+                host: service.host, port: Int(service.port), token: token
+            )
+        }
+        isAddingMac = false
 
         UserDefaults.standard.set(service.host, forKey: "bridge_host")
         UserDefaults.standard.set(Int(service.port), forKey: "bridge_port")
@@ -157,6 +175,74 @@ final class RelayService: ObservableObject {
         // Notify watch
         let state = SessionState.disconnected
         sessionManager.updateApplicationContext(with: state)
+    }
+
+    // MARK: - Multi-Mac switching
+
+    /// Switch to an already-paired Mac with one tap (no re-pairing).
+    func switchTo(_ conn: SavedConnection) {
+        sseClient.disconnect()
+        stopElapsedTimer()
+        sessionStartDate = nil
+        terminalBatchTimer?.invalidate()
+        terminalBatchTimer = nil
+        pendingTerminalLines = []
+
+        // Reset per-Mac view state
+        sessions = []
+        recentTerminalLines = []
+        terminalBuffer.clear()
+        pendingApproval = nil
+        isThinking = false
+        elapsedSeconds = 0
+
+        bridgeClient.applyActive(host: conn.host, port: UInt16(conn.port), token: conn.token)
+        ConnectionStore.shared.setActive(conn.id)
+
+        machineName = conn.name
+        isPaired = true
+        isAddingMac = false
+        connectionState = .connecting
+
+        UserDefaults.standard.set(conn.name, forKey: "paired_machine_name")
+
+        startEventStream()
+        startElapsedTimer()
+        updateWatchState()
+    }
+
+    /// Start pairing an additional Mac (PairingView is shown over the list).
+    func beginAddMac() { isAddingMac = true }
+    func cancelAddMac() { isAddingMac = false }
+
+    /// Forget the active Mac; switch to another saved Mac if one exists.
+    func forgetActive() {
+        let store = ConnectionStore.shared
+        if let id = store.activeID { store.remove(id) }
+
+        sseClient.disconnect()
+
+        if let next = store.active {
+            switchTo(next)
+            return
+        }
+
+        // No Macs left — fall back to the pairing screen.
+        bridgeClient.clearCredentials()
+        stopElapsedTimer()
+        terminalBatchTimer?.invalidate()
+        terminalBatchTimer = nil
+
+        isPaired = false
+        isAddingMac = false
+        machineName = nil
+        sessions = []
+        recentTerminalLines = []
+        terminalBuffer.clear()
+        pendingApproval = nil
+        connectionState = .disconnected
+
+        sessionManager.updateApplicationContext(with: SessionState.disconnected)
     }
 
     // MARK: - Reconnection
@@ -597,9 +683,27 @@ final class RelayService: ObservableObject {
 
     private func handleStop(_ data: String) {
         isThinking = false
-        let line = TerminalLine(text: "Session stopped", type: .system)
-        terminalBuffer.append(line)
+        let json = parseJSON(data)
+        let sessionId = json?["sessionId"] as? String
+
+        // Render Claude's final answer. The bridge reads it from the transcript
+        // on Stop and forwards it as `assistantText` — this is the only place the
+        // reply text appears (tool actions arrive separately via tool-output).
+        if let answer = json?["assistantText"] as? String,
+           !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            for raw in answer.components(separatedBy: "\n") {
+                let line = TerminalLine(text: raw, type: .output, sessionId: sessionId)
+                terminalBuffer.append(line)
+                appendToSession(line, sessionId: sessionId)
+                pendingTerminalLines.append(line)
+            }
+        }
+
+        let stopLine = TerminalLine(text: "Session stopped", type: .system, sessionId: sessionId)
+        terminalBuffer.append(stopLine)
+        appendToSession(stopLine, sessionId: sessionId)
         recentTerminalLines = terminalBuffer.getLast(15)
+        scheduleBatchSend()
         updateWatchState()
     }
 
