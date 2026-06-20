@@ -641,9 +641,22 @@ private struct CmuxTerminalView: View {
     @EnvironmentObject private var relayService: RelayService
 
     @State private var screen: String = ""
+    @State private var screenHash: String? = nil
     @State private var promptText: String = ""
+    @State private var changedNotice = false
     @FocusState private var inputFocused: Bool
     private let pollTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+
+    // Heuristic: does the current screen look like an approval prompt? Only used
+    // to decide whether to hash-guard the send (false positives just make the
+    // send stricter; false negatives behave like before — no safety regression).
+    private var isApprovalScreen: Bool {
+        let s = screen.lowercased()
+        if s.contains("esc to interrupt") { return false } // agent busy, not an approval
+        let markers = ["yes, proceed", "1. yes", "allow this command", "do you want to proceed",
+                       "approve?", "(y/n)", "[y/n", "approval", "승인", "허용하"]
+        return markers.contains { s.contains($0) }
+    }
 
     var body: some View {
         ZStack {
@@ -652,6 +665,7 @@ private struct CmuxTerminalView: View {
                 screenView
                     .padding(.horizontal, 12)
                     .padding(.top, 8)
+                if changedNotice { noticeBar } else if isApprovalScreen { approvalBanner }
                 inputBar
                     .padding(12)
             }
@@ -664,9 +678,34 @@ private struct CmuxTerminalView: View {
     }
 
     private func refresh() async {
-        if let txt = await relayService.cmuxScreen(terminalId) {
-            screen = txt
+        if let s = await relayService.cmuxScreen(terminalId) {
+            screen = s.text
+            screenHash = s.hash
         }
+    }
+
+    private var approvalBanner: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "shield.lefthalf.filled").foregroundStyle(Color.claudeAmber)
+            Text("승인 화면 감지 — 현재 화면 기준으로 안전 전송됩니다")
+                .font(.system(size: 11))
+                .foregroundStyle(Color.claudeAmber)
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 6)
+    }
+
+    private var noticeBar: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.denyRed)
+            Text("화면이 바뀌어 전송을 취소했습니다. 확인 후 다시 보내세요.")
+                .font(.system(size: 11))
+                .foregroundStyle(Color.denyRed)
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 6)
     }
 
     private var screenView: some View {
@@ -719,12 +758,36 @@ private struct CmuxTerminalView: View {
     private func send() {
         let t = promptText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty else { return }
-        relayService.sendCmux(terminalId: terminalId, text: t)
-        promptText = ""
-        inputFocused = false
-        Task {
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            await refresh()
+
+        // Approval screen → hash-guarded send so the response can't land on a
+        // changed screen. Normal prompt → fire-and-forget (screen keeps moving).
+        if isApprovalScreen {
+            let expected = screenHash
+            Task {
+                let result = await relayService.sendCmuxGuarded(terminalId: terminalId, text: t, expectedScreenHash: expected)
+                switch result {
+                case .sent:
+                    promptText = ""
+                    inputFocused = false
+                    changedNotice = false
+                case .screenChanged(let newText, let newHash):
+                    screen = newText            // show what's actually on screen now
+                    screenHash = newHash
+                    changedNotice = true        // keep promptText so the user can re-confirm
+                case .failed:
+                    break
+                }
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                await refresh()
+            }
+        } else {
+            relayService.sendCmux(terminalId: terminalId, text: t)
+            promptText = ""
+            inputFocused = false
+            Task {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                await refresh()
+            }
         }
     }
 }

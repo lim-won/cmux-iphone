@@ -255,14 +255,21 @@ final class RelayService: ObservableObject {
         }
     }
 
-    /// Read one cmux terminal's plain-text screen.
-    func cmuxScreen(_ terminalId: String) async -> String? {
+    /// Read one cmux terminal's plain-text screen (with hash for safe responses).
+    func cmuxScreen(_ terminalId: String) async -> CmuxScreen? {
         try? await bridgeClient.fetchCmuxScreen(terminalId: terminalId)
     }
 
-    /// Send a prompt straight to a cmux terminal (types + Enter).
+    /// Send a prompt straight to a cmux terminal (types + Enter). Unguarded —
+    /// for normal prompts where the screen is expected to keep changing.
     func sendCmux(terminalId: String, text: String) {
         Task { try? await bridgeClient.sendCommand(text: text, terminalId: terminalId) }
+    }
+
+    /// Send an approval response guarded by the screen hash the user was viewing.
+    /// Returns .screenChanged if the bridge rejected because the screen moved.
+    func sendCmuxGuarded(terminalId: String, text: String, expectedScreenHash: String?) async -> CmuxSendResult {
+        await bridgeClient.sendCmuxGuarded(terminalId: terminalId, text: text, expectedScreenHash: expectedScreenHash)
     }
 
     /// Start pairing an additional Mac (PairingView is shown over the list).

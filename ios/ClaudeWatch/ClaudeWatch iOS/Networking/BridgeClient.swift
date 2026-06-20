@@ -1,5 +1,18 @@
 import Foundation
 
+/// A cmux terminal screen plus its hash (for safe approval responses).
+struct CmuxScreen {
+    let text: String
+    let hash: String?
+}
+
+/// Result of a guarded cmux input send.
+enum CmuxSendResult {
+    case sent
+    case screenChanged(text: String, hash: String?)
+    case failed(String)
+}
+
 /// HTTP client for communicating with the Agent Watch bridge server.
 final class BridgeClient {
 
@@ -142,8 +155,9 @@ final class BridgeClient {
         return data
     }
 
-    /// Reads the plain-text screen of one cmux terminal.
-    func fetchCmuxScreen(terminalId: String) async throws -> String {
+    /// Reads the plain-text screen of one cmux terminal, plus its hash (used to
+    /// guard approval responses against the screen changing mid-flight).
+    func fetchCmuxScreen(terminalId: String) async throws -> CmuxScreen {
         guard let baseURL, let token else { throw BridgeError.networkError }
         var comps = URLComponents(url: baseURL.appendingPathComponent("cmux/screen"), resolvingAgainstBaseURL: false)
         comps?.queryItems = [URLQueryItem(name: "id", value: terminalId)]
@@ -155,7 +169,35 @@ final class BridgeClient {
             throw BridgeError.networkError
         }
         let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        return (json?["text"] as? String) ?? ""
+        return CmuxScreen(text: (json?["text"] as? String) ?? "", hash: json?["hash"] as? String)
+    }
+
+    /// Send input to a cmux terminal, guarded by the screen hash the phone last
+    /// rendered. The bridge refuses (409) if the screen changed since — so an
+    /// approval "yes"/"no" can't land on a different prompt.
+    func sendCmuxGuarded(terminalId: String, text: String, expectedScreenHash: String?) async -> CmuxSendResult {
+        guard let baseURL, let token else { return .failed("not paired") }
+        let url = baseURL.appendingPathComponent("command")
+        var body: [String: Any] = ["command": text, "terminalId": terminalId]
+        if let h = expectedScreenHash { body["expectedScreenHash"] = h }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        do {
+            let (data, response) = try await performRequest(request)
+            guard let http = response as? HTTPURLResponse else { return .failed("no response") }
+            if (200..<300).contains(http.statusCode) { return .sent }
+            if http.statusCode == 409 {
+                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                return .screenChanged(text: (json?["currentScreen"] as? String) ?? "",
+                                      hash: json?["currentHash"] as? String)
+            }
+            return .failed("HTTP \(http.statusCode)")
+        } catch {
+            return .failed("network")
+        }
     }
 
     /// Spawns a new agent session.
