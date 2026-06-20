@@ -149,9 +149,31 @@ function generatePairingCode() {
   return code;
 }
 
+// Persist the session token so it survives bridge restarts/reboots. Otherwise
+// every restart regenerates the token, invalidating the phone/watch pairing —
+// the app then gets stuck on "connecting" (401 on /events and /command) until
+// the user re-pairs. With persistence, one pairing survives reboots.
+const TOKEN_FILE = path.join(os.homedir(), "Library", "Application Support", "claude-watch", "session-token");
+
+function loadPersistedToken() {
+  try {
+    const t = fs.readFileSync(TOKEN_FILE, "utf-8").trim();
+    if (t) {
+      sessionToken = t;
+      log("info", "Restored session token from disk — existing pairing survives restart.");
+    }
+  } catch { /* no persisted token yet */ }
+}
+
 function generateSessionToken() {
   const token = crypto.randomBytes(32).toString("hex");
   sessionToken = token;
+  try {
+    fs.mkdirSync(path.dirname(TOKEN_FILE), { recursive: true });
+    fs.writeFileSync(TOKEN_FILE, token, { mode: 0o600 });
+  } catch (err) {
+    log("warn", `Could not persist session token: ${err.message}`);
+  }
   return token;
 }
 
@@ -1599,6 +1621,8 @@ async function startServer() {
   }
 
   log("info", `Bridge server listening on 0.0.0.0:${boundPort}`);
+
+  loadPersistedToken();
 
   const code = generatePairingCode();
 
