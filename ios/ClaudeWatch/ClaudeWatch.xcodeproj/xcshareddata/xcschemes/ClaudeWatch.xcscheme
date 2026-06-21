@@ -29,7 +29,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A9E7C489C7D6CA4629614B5E"
-               BuildableName = "Agent Watch.app"
+               BuildableName = "Agent Watch Watch App.app"
                BlueprintName = "ClaudeWatchWatch"
                ReferencedContainer = "container:ClaudeWatch.xcodeproj">
             </BuildableReference>

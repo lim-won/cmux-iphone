@@ -91,7 +91,7 @@
 		1CD1289B8157BD282826FB50 /* BridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeClient.swift; sourceTree = "<group>"; };
 		234623B6E982F519BDC3EF6D /* CodexLogo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLogo.swift; sourceTree = "<group>"; };
 		2B831D2BFB4BE9A940187EF9 /* Agent Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Agent Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		303943189CE302F154CA350B /* Agent Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Agent Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		303943189CE302F154CA350B /* Agent Watch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Agent Watch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		378B120DB4409D4BE7E1578E /* ClaudeWatchWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeWatchWatchApp.swift; sourceTree = "<group>"; };
 		3A8D708937263FAAC2A40CCA /* OutputRingBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRingBuffer.swift; sourceTree = "<group>"; };
 		3B42442B8133715613F1B33C /* ApprovalRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalRequest.swift; sourceTree = "<group>"; };
@@ -485,7 +485,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ClaudeWatch watchOS/Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = com.seungwon.agentiphone.watchkitapp;
-				PRODUCT_NAME = "Agent Watch";
+				PRODUCT_NAME = "Agent Watch Watch App";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SUPPORTS_MACCATALYST = NO;
@@ -507,7 +507,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ClaudeWatch watchOS/Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = com.seungwon.agentiphone.watchkitapp;
-				PRODUCT_NAME = "Agent Watch";
+				PRODUCT_NAME = "Agent Watch Watch App";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SUPPORTS_MACCATALYST = NO;
