@@ -943,11 +943,10 @@ private struct ModelEffortPanel: View {
 
     private let claudeModels: [(String, String)] = [("Opus", "opus"), ("Sonnet", "sonnet"), ("Haiku", "haiku")]
     private let claudeEfforts: [String] = ["low", "medium", "high", "xhigh", "max", "ultracode"]
-    private let codexModels: [String] = [
-        "gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex",
-        "gpt-5.1-codex-max", "gpt-5.1-codex", "auto-fast", "auto-balanced", "auto-thorough",
-    ]
-    private let codexEfforts: [String] = ["none", "minimal", "low", "medium", "high", "xhigh"]
+    // Labels match codex's "/model" popup rows exactly (verified live, v0.141.0).
+    // Other models need `codex -m <name>`; pick them via the keypad if listed.
+    private let codexModels: [String] = ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini"]
+    private let codexEfforts: [String] = ["Minimal", "Low", "Medium", "High", "Extra high"]
     private let cols = [GridItem(.adaptive(minimum: 88), spacing: 8)]
     private let keypadCols = [GridItem(.adaptive(minimum: 40), spacing: 8)]
 
