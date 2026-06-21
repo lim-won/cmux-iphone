@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// A cmux terminal screen plus its hash (for safe approval responses).
 struct CmuxScreen {
@@ -91,6 +94,25 @@ final class BridgeClient {
 
     // MARK: - Pairing
 
+    /// A stable per-install device id (persisted) + a display name, sent at pair
+    /// time so each device gets its own revocable token on the bridge.
+    static func deviceIdentity() -> (id: String, name: String) {
+        let key = "agentwatch_device_id"
+        let id: String
+        if let existing = UserDefaults.standard.string(forKey: key) {
+            id = existing
+        } else {
+            id = UUID().uuidString
+            UserDefaults.standard.set(id, forKey: key)
+        }
+        #if canImport(UIKit)
+        let name = UIDevice.current.name
+        #else
+        let name = Host.current().localizedName ?? "iPhone"
+        #endif
+        return (id, name)
+    }
+
     /// Pairs with the bridge using a 6-digit code.
     /// On success, stores the session token.
     @discardableResult
@@ -103,7 +125,11 @@ final class BridgeClient {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(["code": code])
+        // Send a stable per-install device id + name so the bridge tracks this
+        // device individually (re-pairing replaces it, not duplicates) and
+        // `agent-watch pair --list` shows a real name.
+        let dev = Self.deviceIdentity()
+        request.httpBody = try JSONEncoder().encode(["code": code, "deviceId": dev.id, "deviceName": dev.name])
 
         let (data, response) = try await performRequest(request)
 

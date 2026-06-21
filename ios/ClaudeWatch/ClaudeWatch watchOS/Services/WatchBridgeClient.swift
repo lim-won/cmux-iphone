@@ -1,4 +1,5 @@
 import Foundation
+import WatchKit
 
 /// Lightweight HTTP client for the watch to connect directly to the bridge.
 /// Works in simulator (localhost) and on real hardware (LAN).
@@ -63,13 +64,28 @@ class WatchBridgeClient: ObservableObject {
         return nil
     }
 
+    /// A stable per-install device id + name for this Watch (pairs independently
+    /// from the iPhone, so it gets its own revocable token on the bridge).
+    private static func deviceIdentity() -> (id: String, name: String) {
+        let key = "watch_device_id"
+        let id: String
+        if let existing = UserDefaults.standard.string(forKey: key) {
+            id = existing
+        } else {
+            id = UUID().uuidString
+            UserDefaults.standard.set(id, forKey: key)
+        }
+        return (id, WKInterfaceDevice.current().name)
+    }
+
     /// Pair with bridge using 6-digit code
     func pair(baseURL: URL, code: String) async throws {
         let url = baseURL.appendingPathComponent("pair")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(["code": code])
+        let dev = Self.deviceIdentity()
+        request.httpBody = try JSONEncoder().encode(["code": code, "deviceId": dev.id, "deviceName": dev.name])
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw BridgeError.network }
