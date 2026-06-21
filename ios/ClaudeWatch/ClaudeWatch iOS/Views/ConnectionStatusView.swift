@@ -650,9 +650,7 @@ private struct CmuxTerminalView: View {
     @EnvironmentObject private var relayService: RelayService
 
     @State private var screen: String = ""
-    @State private var screenHash: String? = nil
     @State private var promptText: String = ""
-    @State private var changedNotice = false
     @State private var showModelSheet = false
     @FocusState private var inputFocused: Bool
     private let pollTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
@@ -664,9 +662,6 @@ private struct CmuxTerminalView: View {
                 terminalCard
                     .padding(.horizontal, 12)
                     .padding(.top, 8)
-                if changedNotice { noticeBar }
-                quickKeys
-                    .padding(.horizontal, 12)
                 inputBar
                     .padding(.horizontal, 12)
                     .padding(.bottom, 12)
@@ -695,7 +690,6 @@ private struct CmuxTerminalView: View {
     private func refresh() async {
         if let s = await relayService.cmuxScreen(terminalId) {
             screen = s.text
-            screenHash = s.hash
         }
     }
 
@@ -743,59 +737,6 @@ private struct CmuxTerminalView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.hairline, lineWidth: 1))
     }
 
-    private var noticeBar: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.denyRed)
-            Text("화면이 바뀌어 전송을 취소했습니다. 확인 후 다시 보내세요.")
-                .font(.system(size: 11))
-                .foregroundStyle(Color.denyRed)
-            Spacer()
-        }
-        .padding(.horizontal, 14)
-    }
-
-    // MARK: quick response keys (hash-guarded — safe for approval prompts)
-
-    private var quickKeys: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Image(systemName: "keyboard")
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color.subtleText)
-                Text("터미널 응답키 — 화면 프롬프트(y/n·번호 선택)에 직접 전송")
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color.subtleText)
-                Spacer(minLength: 0)
-            }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    keyChip("예 (y)", "y", Color.statusGreen)
-                    keyChip("아니오 (n)", "n", Color.denyRed)
-                    keyChip("1", "1", Color.claudeOrange)
-                    keyChip("2", "2", Color.claudeOrange)
-                    keyChip("3", "3", Color.claudeOrange)
-                    keyChip("Enter ⏎", "", Color.subtleText)
-                    keyChip("Esc", "\u{1B}", Color.subtleText, submit: false)
-                }
-                .padding(.horizontal, 2)
-            }
-        }
-    }
-
-    private func keyChip(_ label: String, _ text: String, _ color: Color, submit: Bool = true) -> some View {
-        Button { sendKey(text, submit: submit) } label: {
-            Text(label)
-                .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .foregroundStyle(color)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(color.opacity(0.12))
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(color.opacity(0.35), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-    }
-
     private var inputBar: some View {
         HStack(spacing: 8) {
             TextField("프롬프트 입력…", text: $promptText, axis: .vertical)
@@ -823,27 +764,7 @@ private struct CmuxTerminalView: View {
         }
     }
 
-    // A discrete key/answer → hash-guarded so it can't land on a changed screen.
-    private func sendKey(_ text: String, submit: Bool) {
-        let expected = screenHash
-        Task {
-            let result = await relayService.sendCmuxGuarded(terminalId: terminalId, text: text, expectedScreenHash: expected, submit: submit)
-            switch result {
-            case .sent:
-                changedNotice = false
-            case .screenChanged(let newText, let newHash):
-                screen = newText
-                screenHash = newHash
-                changedNotice = true
-            case .failed:
-                break
-            }
-            try? await Task.sleep(nanoseconds: 400_000_000)
-            await refresh()
-        }
-    }
-
-    // Free-text prompt → unguarded (the screen is expected to keep changing).
+    // Send the prompt to the terminal (the screen is expected to keep changing).
     private func send() {
         let t = promptText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty else { return }
