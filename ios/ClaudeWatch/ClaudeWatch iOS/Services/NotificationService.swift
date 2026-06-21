@@ -35,20 +35,15 @@ final class NotificationService {
     }
 
     private func registerCategories() {
-        let approveAction = UNNotificationAction(
-            identifier: Self.approveAction,
-            title: "Approve",
-            options: [.authenticationRequired]
-        )
-        let denyAction = UNNotificationAction(
-            identifier: Self.denyAction,
-            title: "Deny",
-            options: [.destructive]
-        )
-
+        // NOTE: Approve/Deny notification ACTION BUTTONS are intentionally omitted.
+        // They require a UNUserNotificationCenterDelegate (and a permissionId in
+        // userInfo) to actually answer the bridge — neither is wired up yet, so
+        // advertising them would let a tap silently no-op. Until that's built,
+        // the notification just opens the app, where the in-app approval queue
+        // (RelayService.respond) handles it correctly. See P0-5.
         let approvalCategory = UNNotificationCategory(
             identifier: Self.approvalCategory,
-            actions: [approveAction, denyAction],
+            actions: [],
             intentIdentifiers: [],
             options: []
         )

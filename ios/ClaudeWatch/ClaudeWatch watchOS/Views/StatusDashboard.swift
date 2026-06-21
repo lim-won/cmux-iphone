@@ -134,6 +134,7 @@ struct StatusDashboard: View {
     private var connectionColor: Color {
         switch session.sessionState.connection {
         case .connected: return Theme.Accent.success
+        case .degraded: return Theme.Accent.approval
         case .connecting: return Theme.Text.secondary
         case .disconnected: return Theme.Accent.error
         case .iPhoneUnreachable: return Theme.Accent.approval
@@ -143,6 +144,7 @@ struct StatusDashboard: View {
     private var connectionLabel: String {
         switch session.sessionState.connection {
         case .connected: return "Connected"
+        case .degraded: return "Realtime lost"
         case .connecting: return "Connecting..."
         case .disconnected: return "Disconnected"
         case .iPhoneUnreachable: return "iPhone Unreachable"

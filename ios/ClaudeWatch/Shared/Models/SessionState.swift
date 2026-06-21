@@ -4,6 +4,7 @@ enum ConnectionState: String, Codable {
     case disconnected
     case connecting
     case connected
+    case degraded            // realtime (SSE) lost — polling /status only; no live approvals/output
     case iPhoneUnreachable
 }
 

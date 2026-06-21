@@ -252,13 +252,14 @@ struct ConnectionStatusView: View {
     private func officeRow(name: String, subtitle: String?, isActive: Bool, onTap: @escaping () -> Void) -> some View {
         let connected = isActive && relayService.connectionState == .connected
         let connecting = isActive && relayService.connectionState == .connecting
+        let degraded = isActive && relayService.connectionState == .degraded
         let sessionCount = isActive ? relayService.sessions.count : nil
         let folderCount = isActive
             ? Set(relayService.sessions.map { workspaceKey($0) }).count
             : nil
         let dotColor: Color = connected
             ? Color.statusGreen
-            : (connecting ? Color.claudeAmber : Color.subtleText.opacity(0.5))
+            : ((connecting || degraded) ? Color.claudeAmber : Color.subtleText.opacity(0.5))
         let borderColor: Color = isActive ? Color.claudeOrange.opacity(0.35) : Color.hairline
 
         return Button(action: onTap) {
@@ -283,7 +284,11 @@ struct ConnectionStatusView: View {
                             .foregroundStyle(Color.subtleText)
                             .lineLimit(1)
                     }
-                    if isActive, connected, let sessionCount, let folderCount {
+                    if isActive, degraded {
+                        Text("실시간 끊김 · 재연결 중…")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.claudeAmber)
+                    } else if isActive, connected, let sessionCount, let folderCount {
                         Text("워크스페이스 \(folderCount) · 세션 \(sessionCount)")
                             .font(.system(size: 12))
                             .foregroundStyle(Color.subtleText)
@@ -368,6 +373,15 @@ private struct WorkspacesView: View {
                         Text("연결됨")
                             .font(.system(size: 12))
                             .foregroundStyle(Color.subtleText)
+                    }
+                }
+            } else if relayService.connectionState == .degraded {
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 5) {
+                        Circle().fill(Color.claudeAmber).frame(width: 7, height: 7)
+                        Text("실시간 끊김")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.claudeAmber)
                     }
                 }
             }

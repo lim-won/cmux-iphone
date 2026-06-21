@@ -67,6 +67,7 @@ final class RelayService: ObservableObject {
 
     private var elapsedTimer: Timer?
     private var sessionStartDate: Date?
+    private var sseRetryTimer: Timer?   // periodic SSE re-attempt while degraded to polling
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -174,6 +175,7 @@ final class RelayService: ObservableObject {
     /// Removes pairing and disconnects.
     func unpair() {
         sseClient.disconnect()
+        stopSSERetry()
         bridgeClient.clearCredentials()
         stopElapsedTimer()
         terminalBatchTimer?.invalidate()
@@ -183,12 +185,8 @@ final class RelayService: ObservableObject {
         machineName = nil
         modelName = nil
         workingDirectory = nil
-        elapsedSeconds = 0
-        recentTerminalLines = []
+        resetPerMacState()
         connectionState = .disconnected
-        pendingApproval = nil
-        approvalQueue = []
-        resolvedPermissionIds = []
 
         UserDefaults.standard.removeObject(forKey: "paired_machine_name")
         UserDefaults.standard.removeObject(forKey: "last_connected")
@@ -203,21 +201,14 @@ final class RelayService: ObservableObject {
     /// Switch to an already-paired Mac with one tap (no re-pairing).
     func switchTo(_ conn: SavedConnection) {
         sseClient.disconnect()
+        stopSSERetry()
         stopElapsedTimer()
         sessionStartDate = nil
         terminalBatchTimer?.invalidate()
         terminalBatchTimer = nil
         pendingTerminalLines = []
 
-        // Reset per-Mac view state
-        sessions = []
-        recentTerminalLines = []
-        terminalBuffer.clear()
-        pendingApproval = nil
-        approvalQueue = []
-        resolvedPermissionIds = []
-        isThinking = false
-        elapsedSeconds = 0
+        resetPerMacState()
 
         bridgeClient.applyActive(host: conn.host, port: UInt16(conn.port), token: conn.token)
         ConnectionStore.shared.setActive(conn.id)
@@ -319,6 +310,7 @@ final class RelayService: ObservableObject {
         if let id = store.activeID { store.remove(id) }
 
         sseClient.disconnect()
+        stopSSERetry()
 
         if let next = store.active {
             switchTo(next)
@@ -334,15 +326,28 @@ final class RelayService: ObservableObject {
         isPaired = false
         isAddingMac = false
         machineName = nil
+        resetPerMacState()
+        connectionState = .disconnected
+
+        sessionManager.updateApplicationContext(with: SessionState.disconnected)
+    }
+
+    /// Reset all per-Mac view state — sessions, terminal, approvals, AND the cmux
+    /// mirror (cmuxAvailable/cmuxWorkspaces/cmuxScreenTick) — so switching or
+    /// forgetting a Mac never leaves the previous Mac's workspaces visible or
+    /// tappable. Field-by-field reset previously drifted; centralize it here.
+    private func resetPerMacState() {
         sessions = []
         recentTerminalLines = []
         terminalBuffer.clear()
         pendingApproval = nil
         approvalQueue = []
         resolvedPermissionIds = []
-        connectionState = .disconnected
-
-        sessionManager.updateApplicationContext(with: SessionState.disconnected)
+        isThinking = false
+        elapsedSeconds = 0
+        cmuxAvailable = false
+        cmuxWorkspaces = []
+        cmuxScreenTick = 0
     }
 
     // MARK: - Reconnection
@@ -379,6 +384,7 @@ final class RelayService: ObservableObject {
                 switch state {
                 case .connected:
                     self?.connectionState = .connected
+                    self?.stopSSERetry()
                     self?.lastConnected = Date()
                     UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "last_connected")
                     self?.updateWatchState()
@@ -386,13 +392,32 @@ final class RelayService: ObservableObject {
                     self?.connectionState = .connecting
                 case .disconnected:
                     self?.connectionState = .disconnected
+                    self?.stopSSERetry()
                     self?.updateWatchState()
                 case .polling:
-                    // Still considered connected, just degraded
-                    break
+                    // Realtime (SSE) is lost — /status polling has no approvals or
+                    // terminal output. Surface as DEGRADED (not connected) and keep
+                    // trying to restore SSE so missed approvals replay on reconnect.
+                    self?.connectionState = .degraded
+                    self?.updateWatchState()
+                    self?.scheduleSSERetry()
                 }
             }
         }
+    }
+
+    // MARK: - SSE recovery (degraded -> retry)
+
+    private func scheduleSSERetry() {
+        guard sseRetryTimer == nil else { return }
+        sseRetryTimer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.sseClient.retrySSE() }
+        }
+    }
+
+    private func stopSSERetry() {
+        sseRetryTimer?.invalidate()
+        sseRetryTimer = nil
     }
 
     private func handleBridgeEvent(_ event: SSEClient.SSEEvent) {
@@ -992,6 +1017,7 @@ final class RelayService: ObservableObject {
     private var currentActivity: SessionActivity {
         switch connectionState {
         case .connected: return .running
+        case .degraded: return .running   // still alive, just no realtime stream
         case .connecting: return .idle
         case .disconnected: return .ended
         case .iPhoneUnreachable: return .idle

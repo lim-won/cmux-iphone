@@ -193,6 +193,16 @@ final class SSEClient {
         pollingTimer = nil
     }
 
+    /// Re-attempt the real SSE stream while degraded to polling. Clears the
+    /// 3-in-30s failure budget so a transient blip can recover; a fresh failure
+    /// records again and falls back to polling. Called periodically by RelayService.
+    func retrySSE() {
+        guard state == .polling else { return }   // don't disturb a healthy/connecting stream
+        sseFailures.removeAll()
+        stopPolling()
+        startSSE()
+    }
+
     private func poll() {
         guard let baseURL, let token else { return }
 
