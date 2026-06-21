@@ -32,6 +32,6 @@
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>com.example.agentwatch</string>
+	<string>$(AGENT_WATCH_BUNDLE_ID)</string>
 </dict>
 </plist>
