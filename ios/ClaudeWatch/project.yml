@@ -1,6 +1,7 @@
 name: ClaudeWatch
 options:
-  bundleIdPrefix: com.shobhit.claudewatch
+  # Neutral placeholder — fork users set their own reverse-DNS prefix + Team.
+  bundleIdPrefix: com.example.agentwatch
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"
@@ -20,7 +21,7 @@ targets:
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.shobhit.claudewatch
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.agentwatch
         INFOPLIST_FILE: "ClaudeWatch iOS/Info.plist"
         PRODUCT_NAME: Agent Watch
         GENERATE_INFOPLIST_FILE: false
@@ -36,9 +37,11 @@ targets:
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.shobhit.claudewatch.watchkitapp
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.agentwatch.watchkitapp
         INFOPLIST_FILE: "ClaudeWatch watchOS/Info.plist"
-        PRODUCT_NAME: Agent Watch
+        # Distinct from the iOS app's "Agent Watch" — two targets producing the
+        # same .app name caused "Multiple commands produce …/Agent Watch.app".
+        PRODUCT_NAME: Agent Watch Watch App
         GENERATE_INFOPLIST_FILE: false
         SUPPORTS_MACCATALYST: false
         ARCHS: "arm64 arm64e arm64_32"

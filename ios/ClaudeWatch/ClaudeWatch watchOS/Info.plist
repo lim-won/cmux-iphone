@@ -32,6 +32,6 @@
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>com.seungwon.agentiphone</string>
+	<string>com.example.agentwatch</string>
 </dict>
 </plist>
