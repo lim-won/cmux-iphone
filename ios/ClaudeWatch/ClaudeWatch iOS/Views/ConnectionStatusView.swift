@@ -757,17 +757,28 @@ private struct CmuxTerminalView: View {
     // MARK: quick response keys (hash-guarded — safe for approval prompts)
 
     private var quickKeys: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                keyChip("예 y", "y", Color.statusGreen)
-                keyChip("아니오 n", "n", Color.denyRed)
-                keyChip("1", "1", Color.claudeOrange)
-                keyChip("2", "2", Color.claudeOrange)
-                keyChip("3", "3", Color.claudeOrange)
-                keyChip("⏎", "", Color.subtleText)
-                keyChip("Esc", "\u{1B}", Color.subtleText, submit: false)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                Image(systemName: "keyboard")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.subtleText)
+                Text("터미널 응답키 — 화면 프롬프트(y/n·번호 선택)에 직접 전송")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.subtleText)
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 2)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    keyChip("예 (y)", "y", Color.statusGreen)
+                    keyChip("아니오 (n)", "n", Color.denyRed)
+                    keyChip("1", "1", Color.claudeOrange)
+                    keyChip("2", "2", Color.claudeOrange)
+                    keyChip("3", "3", Color.claudeOrange)
+                    keyChip("Enter ⏎", "", Color.subtleText)
+                    keyChip("Esc", "\u{1B}", Color.subtleText, submit: false)
+                }
+                .padding(.horizontal, 2)
+            }
         }
     }
 
