@@ -47,14 +47,15 @@ The bridge binds the LAN; a pairing code + per-device token are the auth boundar
 | Xcode | 16+ (to build the app) |
 | iOS / watchOS | 17 / 10 |
 | Claude Code | recent |
-| cmux, Tailscale | optional |
+| cmux | optional, **0.63.2+** (uses cmux's `mobile.*` RPC) |
+| Tailscale | optional (remote access) |
 
 ---
 
 ## Install — the Mac bridge
 
 ```bash
-git clone https://github.com/<you>/agent-watch && cd agent-watch/skill/bridge
+git clone https://github.com/lim-won/agent-watch && cd agent-watch/skill/bridge
 npm ci                        # reproducible install (use `npm install` if no lockfile)
 npm link                      # optional: puts `agent-watch` on your PATH
 agent-watch setup             # or: node bin/agent-watch.js setup
@@ -73,6 +74,21 @@ agent-watch setup             # or: node bin/agent-watch.js setup
 > **Why two runners?** A `launchd` process cannot reach the cmux control socket
 > (verified). So when cmux is present the bridge runs *inside* a cmux workspace;
 > otherwise it runs as a LaunchAgent serving hook/phone/Codex sessions only.
+
+### Using the cmux mirror
+
+For the live cmux mirror, **cmux must be running and its control socket
+reachable** when you run setup (configure cmux's socket password if it uses one).
+Then:
+
+```bash
+agent-watch setup --cmux     # fails fast if cmux RPC isn't reachable (instead of half-installing)
+agent-watch doctor           # confirm:  cmux RPC = mobile.workspace.list OK
+```
+
+If cmux is installed but its socket isn't reachable, setup stops and tells you —
+it won't silently start a bridge that can't mirror. To skip cmux entirely and run
+hook/phone/Codex sessions only: `agent-watch setup --launchd`.
 
 Manage it with the CLI:
 
@@ -94,28 +110,39 @@ There is **no App Store / TestFlight build** — Agent Watch is distributed as
 source and you build it with your own free Apple ID. (TestFlight requires a paid
 Apple Developer Program; a public binary may come later if the project enrolls.)
 
+**1. Set your bundle id** (one command — no XcodeGen needed; the iPhone id, the
+Watch id, and the Watch's companion id all derive from it):
+
 ```bash
-brew install xcodegen          # project.yml is the source of truth
-cd ios/ClaudeWatch
-xcodegen generate
-open ClaudeWatch.xcodeproj
+./scripts/configure-ios.sh com.yourname.agentwatch
+open ios/ClaudeWatch/ClaudeWatch.xcodeproj
 ```
 
-In Xcode:
+**2. Add your Apple ID to Xcode:** Xcode → Settings → Accounts → **+** → Apple ID
+(a free account works).
 
-1. **Set your own bundle id + Team.** In `project.yml`, change `bundleIdPrefix`
-   (and the two `PRODUCT_BUNDLE_IDENTIFIER`s) from `com.example.agentwatch` to your
-   own reverse-DNS id, then re-run `xcodegen generate`. The watch id must stay
-   `<iphone-id>.watchkitapp`.
-2. For **both** targets (ClaudeWatch + ClaudeWatchWatch): Signing →
-   *Automatically manage signing* → select your **Personal Team**.
-3. Connect your iPhone (+ paired Watch) → **Run** (⌘R).
-4. On the device: Settings → General → VPN & Device Management → **trust** your
-   developer certificate.
+**3. Set the Team on BOTH targets:** select the project → for **ClaudeWatch** and
+**ClaudeWatchWatch**, Signing & Capabilities → *Automatically manage signing* →
+**Team = your Personal Team**. (The bundle ids are already set by step 1.)
+
+**4. Enable Developer Mode on the iPhone (iOS 16+):** Settings → Privacy &
+Security → **Developer Mode** → On → restart. (Do the same on the Watch if
+deploying to it: Watch app / watchOS Settings → Privacy & Security.)
+
+**5. Run:** plug in your iPhone (with the Watch paired), pick the **ClaudeWatch**
+scheme + your iPhone as the destination → **Run** (⌘R). For the Watch app, pick
+the **ClaudeWatchWatch** scheme and the paired-Watch destination (deploy via the
+iPhone if direct watch install fails).
+
+**6. Trust the developer cert:** on the iPhone, Settings → General → VPN & Device
+Management → tap your developer profile → **Trust**.
 
 > **Free-team limits:** the app expires ~**7 days** after building (re-run from
 > Xcode to refresh), **no push notifications** (local notifications only), max 3
 > devices. SideStore/AltStore can auto-refresh the *iPhone* app wirelessly.
+>
+> Maintainers: the project is generated from `project.yml` with `xcodegen` — only
+> needed if you change the project structure; end users use the script above.
 
 ### Pair
 
