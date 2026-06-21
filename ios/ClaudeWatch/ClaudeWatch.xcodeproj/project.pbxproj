@@ -466,8 +466,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "$(AGENT_WATCH_BUNDLE_ID)";
-				PRODUCT_NAME = "Agent Watch";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(AGENT_IPHONE_BUNDLE_ID)";
+				PRODUCT_NAME = "Agent iPhone";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -481,8 +481,8 @@
 				"EXCLUDED_ARCHS[sdk=watchsimulator*]" = arm64e;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ClaudeWatch watchOS/Info.plist";
-				PRODUCT_BUNDLE_IDENTIFIER = "$(AGENT_WATCH_BUNDLE_ID).watchkitapp";
-				PRODUCT_NAME = "Agent Watch Watch App";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(AGENT_IPHONE_BUNDLE_ID).watchkitapp";
+				PRODUCT_NAME = "Agent iPhone Watch App";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SUPPORTS_MACCATALYST = NO;
@@ -498,8 +498,8 @@
 				"EXCLUDED_ARCHS[sdk=watchsimulator*]" = arm64e;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ClaudeWatch watchOS/Info.plist";
-				PRODUCT_BUNDLE_IDENTIFIER = "$(AGENT_WATCH_BUNDLE_ID).watchkitapp";
-				PRODUCT_NAME = "Agent Watch Watch App";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(AGENT_IPHONE_BUNDLE_ID).watchkitapp";
+				PRODUCT_NAME = "Agent iPhone Watch App";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SUPPORTS_MACCATALYST = NO;
@@ -510,7 +510,7 @@
 		B0EC111974FF115537858D6E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				AGENT_WATCH_BUNDLE_ID = com.example.agentwatch;
+				AGENT_IPHONE_BUNDLE_ID = com.example.agentiphone;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -574,7 +574,7 @@
 		E881D7ED954BB87645DD663B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				AGENT_WATCH_BUNDLE_ID = com.example.agentwatch;
+				AGENT_IPHONE_BUNDLE_ID = com.example.agentiphone;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -640,8 +640,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "$(AGENT_WATCH_BUNDLE_ID)";
-				PRODUCT_NAME = "Agent Watch";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(AGENT_IPHONE_BUNDLE_ID)";
+				PRODUCT_NAME = "Agent iPhone";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

@@ -1,6 +1,6 @@
 # Homebrew distribution (one-time setup)
 
-Goal: `brew install OWNER/tap/agent-watch && agent-watch setup`.
+Goal: `brew install OWNER/tap/agent-iphone && agent-iphone setup`.
 
 The bridge is a pure-JS Node CLI (one dependency, `bonjour-service`), so the
 release tarball vendors `node_modules` — no per-machine compile. `OWNER` is your
@@ -14,10 +14,10 @@ Create a public repo named **`homebrew-tap`** under your account (the
 ```
 homebrew-tap/
 └── Formula/
-    └── agent-watch.rb     # copy of packaging/homebrew/agent-watch.rb
+    └── agent-iphone.rb     # copy of packaging/homebrew/agent-iphone.rb
 ```
 
-Edit `agent-watch.rb`: replace every `OWNER` with your GitHub username. Leave
+Edit `agent-iphone.rb`: replace every `OWNER` with your GitHub username. Leave
 `sha256` as the placeholder for now (the first real release fills it).
 
 ## 2. Add the bump token
@@ -39,31 +39,31 @@ git tag v0.1.0 && git push origin v0.1.0
 ```
 
 On publish, the workflow:
-1. builds `agent-watch-0.1.0.tar.gz` (the `bridge/` + `setup.sh` + `setup-hooks.sh`
+1. builds `agent-iphone-0.1.0.tar.gz` (the `bridge/` + `setup.sh` + `setup-hooks.sh`
    with vendored prod deps),
 2. attaches it to the release,
-3. rewrites `url` + `sha256` in `OWNER/homebrew-tap/Formula/agent-watch.rb`.
+3. rewrites `url` + `sha256` in `OWNER/homebrew-tap/Formula/agent-iphone.rb`.
 
 For the **first** release, the formula's placeholder `sha256` is wrong until the
 bump runs — if `brew install` is attempted before the first successful bump,
-fill the sha by hand once: `shasum -a 256 agent-watch-0.1.0.tar.gz`.
+fill the sha by hand once: `shasum -a 256 agent-iphone-0.1.0.tar.gz`.
 
 ## 4. Install
 
 ```bash
-brew install OWNER/tap/agent-watch
-agent-watch setup
+brew install OWNER/tap/agent-iphone
+agent-iphone setup
 ```
 
-`brew services start agent-watch` runs the **core** bridge (hooks + phone) as a
+`brew services start agent-iphone` runs the **core** bridge (hooks + phone) as a
 LaunchAgent. The cmux **live mirror** needs the in-cmux runner — let
-`agent-watch setup` handle that when cmux is present (a launchd process can't
+`agent-iphone setup` handle that when cmux is present (a launchd process can't
 reach the cmux control socket). See the main README for the topology.
 
 ## Updating
 
 Tag + release a new version; the workflow re-bumps the formula. Users get it via
-`brew update && brew upgrade agent-watch`.
+`brew update && brew upgrade agent-iphone`.
 
 ## Notes / limits
 

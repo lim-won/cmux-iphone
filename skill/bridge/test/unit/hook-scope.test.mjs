@@ -1,5 +1,5 @@
 // P0 regression: setup-hooks.sh --remove (and install dedupe) must strip ONLY
-// Agent Watch's own hook objects, never delete a mixed entry that also holds
+// Agent iPhone's own hook objects, never delete a mixed entry that also holds
 // another tool's hooks. Runs the REAL script against a throwaway $HOME, so it's
 // deterministic + hermetic (no network, no cmux, no touching the real settings).
 
@@ -12,7 +12,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT = path.resolve(fileURLToPath(import.meta.url), "../../../../setup-hooks.sh"); // skill/setup-hooks.sh
-const HOOK = "http://127.0.0.1:7861";       // Agent Watch's loopback hook origin (default port)
+const HOOK = "http://127.0.0.1:7861";       // Agent iPhone's loopback hook origin (default port)
 const FOREIGN = "http://127.0.0.1:9000";    // some other tool on loopback
 
 function runRemoveOn(settings) {
@@ -28,7 +28,7 @@ function runRemoveOn(settings) {
   }
 }
 
-test("--remove strips ONLY Agent Watch hooks, preserving a mixed entry's other tool", () => {
+test("--remove strips ONLY Agent iPhone hooks, preserving a mixed entry's other tool", () => {
   const out = runRemoveOn({
     hooks: {
       Stop: [
@@ -61,7 +61,7 @@ test("--remove strips ONLY Agent Watch hooks, preserving a mixed entry's other t
   assert.equal(pre[0].hooks[0].command, "echo other-tool");
 });
 
-test("--remove on settings with no Agent Watch hooks changes nothing", () => {
+test("--remove on settings with no Agent iPhone hooks changes nothing", () => {
   const original = {
     hooks: { Stop: [{ hooks: [{ type: "command", url: `${FOREIGN}/hooks/x` }] }] },
   };

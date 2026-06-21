@@ -1,5 +1,5 @@
 #!/bin/bash
-# Agent Watch — Install global hooks so ALL Claude Code sessions stream to the bridge.
+# Agent iPhone — Install global hooks so ALL Claude Code sessions stream to the bridge.
 #
 # Usage: ./setup-hooks.sh [port]
 #   port: bridge server port (default: 7860)
@@ -39,7 +39,7 @@ if [ "$1" = "--remove" ]; then
     exit 0
   fi
 
-  # Remove ONLY Agent Watch's own hooks — matched by our exact loopback origin
+  # Remove ONLY Agent iPhone's own hooks — matched by our exact loopback origin
   # + route set, so we never delete another tool's localhost hooks.
   python3 -c "
 import json, sys
@@ -77,16 +77,16 @@ if changed:
         del settings['hooks']
     with open('$SETTINGS', 'w') as f:
         json.dump(settings, f, indent=2)
-    print('Agent Watch hooks removed from $SETTINGS')
+    print('Agent iPhone hooks removed from $SETTINGS')
 else:
-    print('No Agent Watch hooks found.')
+    print('No Agent iPhone hooks found.')
 "
   exit 0
 fi
 
 # ── Install mode ─────────────────────────────────────────────────────────────
 
-echo "Installing Agent Watch hooks..."
+echo "Installing Agent iPhone hooks..."
 echo "  Bridge URL: ${BRIDGE_URL}"
 echo "  Settings:   ${SETTINGS}"
 echo ""
@@ -106,7 +106,7 @@ if [ ! -f "$SETTINGS" ]; then
 else
   # Back up before we modify it (the hook headers embed the secret). Keep the
   # backup private — it contains the same secret as the live file.
-  BACKUP="${SETTINGS}.agentwatch.bak.$(date +%Y%m%d%H%M%S)"
+  BACKUP="${SETTINGS}.agentiphone.bak.$(date +%Y%m%d%H%M%S)"
   cp "$SETTINGS" "$BACKUP" && chmod 600 "$BACKUP"
   echo "  Backed up existing settings → ${BACKUP}"
 fi
@@ -195,7 +195,7 @@ with open('$SETTINGS', 'r') as f:
 
 existing_hooks = settings.get('hooks', {})
 
-# Agent Watch's own hook URLs (exact) — used to replace our prior install without
+# Agent iPhone's own hook URLs (exact) — used to replace our prior install without
 # touching another tool's localhost hooks. BRIDGE is our loopback hook origin.
 AW_ROUTES = ('tool-output', 'pre-tool-use', 'session-start', 'session-end', 'permission', 'stop', 'error')
 AW_URLS = {f'{BRIDGE}/hooks/{r}' for r in AW_ROUTES}
@@ -255,7 +255,7 @@ if command -v codex &>/dev/null; then
 
   cat > "$WRAPPER" << 'WRAPPER_EOF'
 #!/bin/bash
-# codex-watch: Runs Codex and streams events to Agent Watch bridge.
+# codex-watch: Runs Codex and streams events to Agent iPhone bridge.
 # Drop-in replacement for `codex` — use `codex-watch` instead.
 API_URL="http://127.0.0.1:${CLAUDE_WATCH_PORT:-7860}"
 HOOK_URL="http://127.0.0.1:${CLAUDE_WATCH_HOOK_PORT:-7861}"

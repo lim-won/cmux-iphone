@@ -1,6 +1,6 @@
 # Attribution
 
-Agent Watch is a fork of **claude-watch** by **shobhit99**
+Agent iPhone is a fork of **claude-watch** by **shobhit99**
 (https://github.com/shobhit99/claude-watch), whose README declares the project
 MIT-licensed. This repository preserves that MIT license (see `LICENSE`) and
 adds the original author's copyright alongside the fork's contributors.

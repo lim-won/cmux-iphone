@@ -86,7 +86,7 @@ const BRIDGE_ID = crypto.randomUUID();
 
 // Mobile web client (served at GET /) — lets an iPhone use the bridge from
 // Safari with no app install.
-let WEB_CLIENT_HTML = "<!doctype html><title>Agent Watch</title><h1>web client missing</h1>";
+let WEB_CLIENT_HTML = "<!doctype html><title>Agent iPhone</title><h1>web client missing</h1>";
 try {
   WEB_CLIENT_HTML = fs.readFileSync(new URL("./webclient.html", import.meta.url), "utf-8");
 } catch {
@@ -1821,7 +1821,7 @@ async function handleDevicesRevoke(req, res) {
 }
 
 // GET /pair-code — the current pairing code, LOOPBACK-ONLY (for the local
-// agent-watch CLI). Not exposed to LAN clients, so it needs no token.
+// agent-iphone CLI). Not exposed to LAN clients, so it needs no token.
 function handlePairCode(req, res) {
   const remote = req.socket.remoteAddress || "";
   const isLoopback = remote === "127.0.0.1" || remote === "::1" || remote === "::ffff:127.0.0.1";
@@ -2060,7 +2060,7 @@ async function startServer() {
   // Bonjour
   bonjourInstance = new Bonjour();
   bonjourService = bonjourInstance.publish({
-    name: `Agent Watch Bridge (${os.hostname()})`,
+    name: `Agent iPhone Bridge (${os.hostname()})`,
     type: "claude-watch",
     protocol: "tcp",
     port: boundPort,
@@ -2096,7 +2096,7 @@ async function startServer() {
   const agentLine = agents.length ? agents.join(" + ") : "none";
   console.log("");
   console.log("╔═══════════════════════════════════════╗");
-  console.log("║        AGENT WATCH BRIDGE             ║");
+  console.log("║        AGENT IPHONE BRIDGE             ║");
   console.log("╠═══════════════════════════════════════╣");
   console.log(`║  Pairing Code:  ${code}                ║`);
   console.log(`║  IP Address:    ${lanIP.padEnd(20)}║`);

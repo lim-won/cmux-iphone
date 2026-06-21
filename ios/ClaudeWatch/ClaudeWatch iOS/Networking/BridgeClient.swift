@@ -16,7 +16,7 @@ enum CmuxSendResult {
     case failed(String)
 }
 
-/// HTTP client for communicating with the Agent Watch bridge server.
+/// HTTP client for communicating with the Agent iPhone bridge server.
 final class BridgeClient {
 
     // MARK: - Errors
@@ -97,7 +97,7 @@ final class BridgeClient {
     /// A stable per-install device id (persisted) + a display name, sent at pair
     /// time so each device gets its own revocable token on the bridge.
     static func deviceIdentity() -> (id: String, name: String) {
-        let key = "agentwatch_device_id"
+        let key = "agentiphone_device_id"
         let id: String
         if let existing = UserDefaults.standard.string(forKey: key) {
             id = existing
@@ -127,7 +127,7 @@ final class BridgeClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         // Send a stable per-install device id + name so the bridge tracks this
         // device individually (re-pairing replaces it, not duplicates) and
-        // `agent-watch pair --list` shows a real name.
+        // `agent-iphone pair --list` shows a real name.
         let dev = Self.deviceIdentity()
         request.httpBody = try JSONEncoder().encode(["code": code, "deviceId": dev.id, "deviceName": dev.name])
 
@@ -270,7 +270,7 @@ final class BridgeClient {
             "behavior": allow ? "allow" : "deny"
         ]
         if !allow {
-            decision["message"] = "Denied from Agent Watch app"
+            decision["message"] = "Denied from Agent iPhone app"
         }
         var body: [String: Any] = [
             "permissionId": requestId,

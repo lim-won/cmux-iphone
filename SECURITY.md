@@ -2,7 +2,7 @@
 
 ## Trust model
 
-Agent Watch is a **personal, local-network tool**, not an internet-facing service.
+Agent iPhone is a **personal, local-network tool**, not an internet-facing service.
 
 - The **bridge** listens on `0.0.0.0:<apiPort>` (default 7860) so the phone/watch
   can reach it over the LAN or a Tailnet. Anyone who can reach that port can
@@ -10,7 +10,7 @@ Agent Watch is a **personal, local-network tool**, not an internet-facing servic
 - **Auth boundary:** a short-lived **pairing code** (rotating 6-digit, 24h TTL by
   default) establishes a **per-device bearer token**. Every authenticated request
   (`/command`, `/events`, `/status`, `/devices`, cmux routes) requires a valid
-  device token. Tokens are individually revocable (`agent-watch pair --revoke`).
+  device token. Tokens are individually revocable (`agent-iphone pair --revoke`).
 - The **hook listener** (default 7861) is bound to **loopback only** and gated by
   a shared secret header, so Claude Code's hook traffic never crosses the network.
 - `GET /health` is public (liveness only — no session data). `GET /status` and
@@ -20,8 +20,8 @@ Agent Watch is a **personal, local-network tool**, not an internet-facing servic
 
 - **Prefer Tailscale** (or a trusted home LAN) over exposing the LAN port. Do
   **not** port-forward the bridge to the public internet.
-- Revoke a lost device's token with `agent-watch pair --revoke <id>`.
-- `agent-watch uninstall --purge` removes the service, hooks, and all local data.
+- Revoke a lost device's token with `agent-iphone pair --revoke <id>`.
+- `agent-iphone uninstall --purge` removes the service, hooks, and all local data.
 
 ## Secrets
 
@@ -32,7 +32,7 @@ Generated at runtime, stored **outside the repo** with `0600` permissions:
 - `~/.config/claude-watch/cmux-password` — cmux control-socket password (if used)
 
 The hook secret is also embedded in `~/.claude/settings.json` (in the hook
-headers); `agent-watch setup` backs that file up and `chmod 600`s it. None of
+headers); `agent-iphone setup` backs that file up and `chmod 600`s it. None of
 these are tracked by git (`.gitignore` guards them as defense-in-depth). **Never
 commit a real token, secret, password, or pairing code.**
 

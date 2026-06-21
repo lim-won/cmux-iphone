@@ -31,27 +31,27 @@ jobs:
           set -euo pipefail
           V="${GITHUB_REF_NAME#v}"
           echo "V=$V" >> "$GITHUB_ENV"
-          stage="dist/agent-watch"
+          stage="dist/agent-iphone"
           mkdir -p "$stage/bridge"
-          # Self-contained package: the bridge + the scripts agent-watch shells out to.
+          # Self-contained package: the bridge + the scripts agent-iphone shells out to.
           cp -R skill/bridge/. "$stage/bridge/"
           cp skill/setup.sh skill/setup-hooks.sh "$stage/"
           # Reproducible, prod-only deps (pure JS → safe to vendor, no compile).
           ( cd "$stage/bridge" && rm -rf node_modules && npm ci --omit=dev )
           find dist -name '.DS_Store' -delete
-          tar -C dist -czf "agent-watch-${V}.tar.gz" agent-watch
-          echo "sha256:"; shasum -a 256 "agent-watch-${V}.tar.gz"
+          tar -C dist -czf "agent-iphone-${V}.tar.gz" agent-iphone
+          echo "sha256:"; shasum -a 256 "agent-iphone-${V}.tar.gz"
 
       - name: Attach tarball to the release
         uses: softprops/action-gh-release@v2
         with:
-          files: agent-watch-*.tar.gz
+          files: agent-iphone-*.tar.gz
 
       - name: Bump Homebrew formula in the tap
         uses: mislav/bump-homebrew-formula-action@v3
         with:
-          formula-name: agent-watch
+          formula-name: agent-iphone
           homebrew-tap: ${{ github.repository_owner }}/homebrew-tap
-          download-url: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/agent-watch-${{ env.V }}.tar.gz
+          download-url: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/agent-iphone-${{ env.V }}.tar.gz
         env:
           COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}

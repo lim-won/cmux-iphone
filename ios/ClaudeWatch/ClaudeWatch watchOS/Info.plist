@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Agent Watch</string>
+	<string>Agent iPhone</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -26,12 +26,12 @@
 		<true/>
 	</dict>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Agent Watch needs microphone access to transcribe your voice commands.</string>
+	<string>Agent iPhone needs microphone access to transcribe your voice commands.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Agent Watch uses speech recognition to convert your voice commands to text.</string>
+	<string>Agent iPhone uses speech recognition to convert your voice commands to text.</string>
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>$(AGENT_WATCH_BUNDLE_ID)</string>
+	<string>$(AGENT_IPHONE_BUNDLE_ID)</string>
 </dict>
 </plist>

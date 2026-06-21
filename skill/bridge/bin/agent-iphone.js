@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// agent-watch — manage the Agent Watch bridge (Claude Code / cmux → iPhone).
+// agent-iphone — manage the Agent iPhone bridge (Claude Code / cmux → iPhone).
 //
-//   agent-watch <command> [options]
+//   agent-iphone <command> [options]
 //
 // Commands: setup · doctor · status · pair · logs · restart · uninstall
 // Every command is safe to re-run.
@@ -17,13 +17,13 @@ const COMMANDS = {
 };
 
 function usage() {
-  console.log("agent-watch — Agent Watch bridge manager\n");
-  console.log("Usage: agent-watch <command> [options]\n");
+  console.log("agent-iphone — Agent iPhone bridge manager\n");
+  console.log("Usage: agent-iphone <command> [options]\n");
   console.log("Commands:");
   for (const [name, desc] of Object.entries(COMMANDS)) {
     console.log(`  ${name.padEnd(11)} ${desc}`);
   }
-  console.log("\nRun 'agent-watch <command> --help' for command-specific options.");
+  console.log("\nRun 'agent-iphone <command> --help' for command-specific options.");
 }
 
 async function main() {
@@ -51,7 +51,7 @@ async function main() {
     const code = await mod.run(args);
     process.exit(typeof code === "number" ? code : 0);
   } catch (err) {
-    console.error(`agent-watch ${cmd} failed: ${err.message}`);
+    console.error(`agent-iphone ${cmd} failed: ${err.message}`);
     process.exit(1);
   }
 }

@@ -1,7 +1,7 @@
 name: ClaudeWatch
 options:
   # Neutral placeholder — fork users set their own reverse-DNS prefix + Team.
-  bundleIdPrefix: com.example.agentwatch
+  bundleIdPrefix: com.example.agentiphone
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"
@@ -14,7 +14,7 @@ settings:
     # ONE knob for the whole app's identity. The iPhone id, the Watch id
     # (<id>.watchkitapp), and the Watch's WKCompanionAppBundleIdentifier all
     # derive from this — change it in one place (or run scripts/configure-ios.sh).
-    AGENT_WATCH_BUNDLE_ID: com.example.agentwatch
+    AGENT_IPHONE_BUNDLE_ID: com.example.agentiphone
 
 targets:
   ClaudeWatch:
@@ -25,9 +25,9 @@ targets:
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: $(AGENT_WATCH_BUNDLE_ID)
+        PRODUCT_BUNDLE_IDENTIFIER: $(AGENT_IPHONE_BUNDLE_ID)
         INFOPLIST_FILE: "ClaudeWatch iOS/Info.plist"
-        PRODUCT_NAME: Agent Watch
+        PRODUCT_NAME: Agent iPhone
         GENERATE_INFOPLIST_FILE: false
     dependencies:
       - target: ClaudeWatchWatch
@@ -41,11 +41,11 @@ targets:
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: $(AGENT_WATCH_BUNDLE_ID).watchkitapp
+        PRODUCT_BUNDLE_IDENTIFIER: $(AGENT_IPHONE_BUNDLE_ID).watchkitapp
         INFOPLIST_FILE: "ClaudeWatch watchOS/Info.plist"
-        # Distinct from the iOS app's "Agent Watch" — two targets producing the
-        # same .app name caused "Multiple commands produce …/Agent Watch.app".
-        PRODUCT_NAME: Agent Watch Watch App
+        # Distinct from the iOS app's "Agent iPhone" — two targets producing the
+        # same .app name caused "Multiple commands produce …/Agent iPhone.app".
+        PRODUCT_NAME: Agent iPhone Watch App
         GENERATE_INFOPLIST_FILE: false
         SUPPORTS_MACCATALYST: false
         ARCHS: "arm64 arm64e arm64_32"

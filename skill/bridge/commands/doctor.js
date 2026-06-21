@@ -1,4 +1,4 @@
-// agent-watch doctor — read-only diagnostics. The PASS/WARN/FAIL block is meant
+// agent-iphone doctor — read-only diagnostics. The PASS/WARN/FAIL block is meant
 // to be pasted into a GitHub issue. It never prints secret values.
 
 import os from "node:os";
@@ -61,7 +61,7 @@ export async function run() {
   // Render
   const counts = { PASS: 0, WARN: 0, FAIL: 0 };
   const line = "─".repeat(52);
-  console.log("agent-watch doctor");
+  console.log("agent-iphone doctor");
   console.log(line);
   for (const [s, l, d] of rows) {
     counts[s] = (counts[s] || 0) + 1;

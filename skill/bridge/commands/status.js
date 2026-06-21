@@ -1,4 +1,4 @@
-// agent-watch status — live bridge status, addresses, paired devices.
+// agent-iphone status — live bridge status, addresses, paired devices.
 
 import { getConfig } from "../lib/config.js";
 import { api, readAnyToken, bridgeUp } from "../lib/bridge-client.js";
@@ -11,11 +11,11 @@ export async function run() {
 
   console.log(`Bridge:    ${up ? "running" : "NOT running"}`);
   if (!up) {
-    console.log("\nRun 'agent-watch setup' to install, or 'agent-watch restart' if it's installed.");
+    console.log("\nRun 'agent-iphone setup' to install, or 'agent-iphone restart' if it's installed.");
     return 1;
   }
 
-  console.log(`Runner:    ${cfg.runner || "(unset — run 'agent-watch setup')"}`);
+  console.log(`Runner:    ${cfg.runner || "(unset — run 'agent-iphone setup')"}`);
   const lan = lanIPv4();
   const ts = tailscaleIPv4();
   if (lan) console.log(`API (LAN): http://${lan}:${port}`);
@@ -29,7 +29,7 @@ export async function run() {
     console.log(`Devices:   ${st.json.pairedDevices ?? "?"} paired`);
     console.log(`Supervise: ${st.json.supervise ? "on" : "off"}`);
   } else {
-    console.log("Devices:   none paired yet (pair a device — see 'agent-watch pair')");
+    console.log("Devices:   none paired yet (pair a device — see 'agent-iphone pair')");
   }
   return 0;
 }

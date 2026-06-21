@@ -107,7 +107,7 @@ export function createCodexAppServer(opts = {}) {
       log(`app-server exited (${code})`);
       if (onExit) onExit(code);
     });
-    await call("initialize", { clientInfo: { name: "agent-watch-bridge", version: "2" } });
+    await call("initialize", { clientInfo: { name: "agent-iphone-bridge", version: "2" } });
     ready = true;
     log("app-server ready");
     return true;

@@ -1,12 +1,12 @@
 // lib/config.js — single source of truth for ports, paths, and secrets.
 //
-// Both the bridge (server.js) and the agent-watch CLI read from here. Values
+// Both the bridge (server.js) and the agent-iphone CLI read from here. Values
 // come from config.json (if present) merged over built-in defaults; env vars
 // still override at runtime (PORT, CLAUDE_WATCH_HOOK_PORT, CMUX_BIN, …).
 //
 // NOTE: the data dir is still "claude-watch" for backward compatibility with
 // existing installs (secrets/tokens already live there). The rename to
-// "agent-watch" is a deliberate later migration, not a silent move.
+// "agent-iphone" is a deliberate later migration, not a silent move.
 
 import os from "node:os";
 import path from "node:path";
@@ -25,8 +25,8 @@ export const paths = {
   devicesFile: path.join(DATA_DIR, "devices.json"),       // per-device tokens
   hookSecretFile: path.join(DATA_DIR, "hook-secret"),
   cmuxPasswordFile: path.join(HOME, ".config", "claude-watch", "cmux-password"),
-  plistLabel: "com.agentwatch.bridge",
-  launchAgentPlist: path.join(HOME, "Library", "LaunchAgents", "com.agentwatch.bridge.plist"),
+  plistLabel: "com.agentiphone.bridge",
+  launchAgentPlist: path.join(HOME, "Library", "LaunchAgents", "com.agentiphone.bridge.plist"),
 };
 
 const DEFAULTS = {

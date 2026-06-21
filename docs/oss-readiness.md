@@ -2,7 +2,7 @@ The audit details are confirmed against the actual code. I have everything I nee
 
 ---
 
-# agent-watch — OSS-Readiness Design Document
+# agent-iphone — OSS-Readiness Design Document
 
 Tech-lead spec. Grounded entirely in the code audit + empirical research above. Where the empirical launchd test or Apple-membership facts override the owner's plan, that is called out explicitly.
 
@@ -10,7 +10,7 @@ Tech-lead spec. Grounded entirely in the code audit + empirical research above. 
 
 ## 1. Executive Summary
 
-`agent-watch` is a per-user macOS bridge (pure-JS Node ESM, one dependency `bonjour-service`, no native bindings) that relays Claude Code / Codex / cmux sessions to an iPhone + Apple Watch app. The codebase is fundamentally sound: secrets are generated at runtime with `0600` perms, paths are `os.homedir()`-relative, a lockfile is committed. It is **not** OSS-ready due to one shipped credential, scattered config, an over-broad hook remover, and — most importantly — a run-topology assumption that the empirical test disproves.
+`agent-iphone` is a per-user macOS bridge (pure-JS Node ESM, one dependency `bonjour-service`, no native bindings) that relays Claude Code / Codex / cmux sessions to an iPhone + Apple Watch app. The codebase is fundamentally sound: secrets are generated at runtime with `0600` perms, paths are `os.homedir()`-relative, a lockfile is committed. It is **not** OSS-ready due to one shipped credential, scattered config, an over-broad hook remover, and — most importantly — a run-topology assumption that the empirical test disproves.
 
 The owner's plan is ~80% correct. Three decisions change:
 
@@ -36,14 +36,14 @@ The bridge has two independent feature sets:
 
 ```
                     ┌─────────────────────────────────────────┐
-   iPhone / Watch ──┤  agent-watch core (LaunchAgent)          │
-   (LAN/Tailnet)    │  com.agentwatch.bridge                   │
+   iPhone / Watch ──┤  agent-iphone core (LaunchAgent)          │
+   (LAN/Tailnet)    │  com.agentiphone.bridge                   │
                     │  0.0.0.0:7860 API + 127.0.0.1:7861 hooks │
                     │  cmux features auto-OFF (degrade)        │
                     └───────────────┬─────────────────────────┘
                                     │ localhost RPC proxy (optional)
                     ┌───────────────┴─────────────────────────┐
-   cmux GUI app ────┤  agent-watch cmux helper (in-cmux)       │
+   cmux GUI app ────┤  agent-iphone cmux helper (in-cmux)       │
    (logged-in)      │  run-in-cmux.sh supervisor loop          │
                     │  ONLY this can complete cmux socket RPC  │
                     └───────────────────────────────────────────┘
@@ -56,7 +56,7 @@ Two supported shapes, owner picks one for v0.1.0 — **I recommend Shape A** for
 
 `cmux.js` already feature-detects via `cmuxAvailable()` and returns `{available:false, workspaces:[]}` when cmux is unreachable (server.js ~1816), so degradation is graceful and already implemented.
 
-### How `agent-watch setup` handles cmux-present vs cmux-absent
+### How `agent-iphone setup` handles cmux-present vs cmux-absent
 
 ```
 setup detects cmux binary (CMUX_BIN env → which cmux → /Applications/cmux.app/...):
@@ -84,16 +84,16 @@ This matches the memory note: **fall back to hook-only sessions when cmux is abs
 
 ## 3. Repository Restructure
 
-Target: a self-contained `agent-watch/` package that becomes the release tarball (CI ships *only this subtree*, not the whole repo with the iOS app + 6.8MB `recording.mp4`).
+Target: a self-contained `agent-iphone/` package that becomes the release tarball (CI ships *only this subtree*, not the whole repo with the iOS app + 6.8MB `recording.mp4`).
 
 ### Target layout
 
 ```
-agent-watch/                      ← NEW package root; CI tarball = this dir
-├── package.json                  ← add "bin": { "agent-watch": "./bin/agent-watch.js" }
+agent-iphone/                      ← NEW package root; CI tarball = this dir
+├── package.json                  ← add "bin": { "agent-iphone": "./bin/agent-iphone.js" }
 ├── package-lock.json             ← keep (lockfileVersion 3)
 ├── bin/
-│   └── agent-watch.js            ← NEW CLI dispatcher (#!/usr/bin/env node)
+│   └── agent-iphone.js            ← NEW CLI dispatcher (#!/usr/bin/env node)
 ├── bridge/
 │   ├── server.js                 ← from skill/bridge/server.js (constants → config loader)
 │   ├── cmux.js                   ← from skill/bridge/cmux.js (+ CMUX_SOCKET_PATH fix)
@@ -103,7 +103,7 @@ agent-watch/                      ← NEW package root; CI tarball = this dir
 ├── commands/                     ← one module per CLI verb
 │   ├── setup.js  doctor.js  status.js  pair.js  logs.js  restart.js  uninstall.js
 ├── templates/
-│   ├── com.agentwatch.bridge.plist.tmpl   ← from install-launchd.sh's heredoc
+│   ├── com.agentiphone.bridge.plist.tmpl   ← from install-launchd.sh's heredoc
 │   ├── run-in-cmux.sh                      ← from skill/bridge/ (cleaned)
 │   └── codex-watch.tmpl                     ← from setup-hooks.sh:227-284 heredoc
 ├── lib/
@@ -125,11 +125,11 @@ agent-watch/                      ← NEW package root; CI tarball = this dir
 | `skill/bridge/run-in-cmux.sh` | `templates/run-in-cmux.sh` | Cleaned (§2) |
 | `skill/setup-hooks.sh` (python merge/remove + codex-watch heredoc) | `lib/hooks.js` + `templates/codex-watch.tmpl` | Reimplement scoped (§4); single source of HOOK_PORT/secret path |
 | `skill/setup.sh` | `commands/setup.js` | `npm ci` not `npm install` |
-| `skill/SKILL.md` + `.claude/skills/.../SKILL.md` | keep skill, reconcile naming, drop `node-pty` claim | The two diverge ("Claude Watch" vs "Agent Watch") — unify |
+| `skill/SKILL.md` + `.claude/skills/.../SKILL.md` | keep skill, reconcile naming, drop `node-pty` claim | The two diverge ("Claude Watch" vs "Agent iPhone") — unify |
 
 ### New `config.json` schema
 
-Single source of truth at `~/Library/Application Support/agent-watch/config.json`. Replaces constants scattered across server.js, setup-hooks.sh (×3 copies of hook-secret path), install-launchd.sh, and the Swift clients.
+Single source of truth at `~/Library/Application Support/agent-iphone/config.json`. Replaces constants scattered across server.js, setup-hooks.sh (×3 copies of hook-secret path), install-launchd.sh, and the Swift clients.
 
 ```jsonc
 {
@@ -140,8 +140,8 @@ Single source of truth at `~/Library/Application Support/agent-watch/config.json
     "hookPort": 7861          // loopback, secret-gated; replaces HOOK_PORT literal
   },
   "paths": {
-    "dataDir": "~/Library/Application Support/agent-watch",  // ONE base dir
-    "logDir":  "~/Library/Logs/agent-watch",
+    "dataDir": "~/Library/Application Support/agent-iphone",  // ONE base dir
+    "logDir":  "~/Library/Logs/agent-iphone",
     "sessionTokenFile": "{dataDir}/session-token",   // 0600
     "hookSecretFile":   "{dataDir}/hook-secret",     // 0600
     "cmuxPasswordFile": "{dataDir}/cmux-password"     // 0600 — FOLDED IN from ~/.config/claude-watch
@@ -160,7 +160,7 @@ Single source of truth at `~/Library/Application Support/agent-watch/config.json
 }
 ```
 
-Env vars still override config (`PORT`, `WATCH_PAIR_CODE`, `CMUX_BIN`, `CLAUDE_WATCH_HOOK_PORT`) — config is the persisted default, env is the runtime override. **The iOS/watchOS clients must stop hardcoding `7860-7869`** (`BonjourDiscovery.swift:78,117`, `WatchBridgeClient.swift:50`, `OnboardingView.swift:115`); they should read the advertised port from the Bonjour TXT record the bridge already publishes (`_agent-watch._tcp`). Rename the service type `_claude-watch._tcp → _agent-watch._tcp` in lockstep on both sides, or keep the old type for v0.1.0 and rename later — but pick one and keep bridge + Swift in sync.
+Env vars still override config (`PORT`, `WATCH_PAIR_CODE`, `CMUX_BIN`, `CLAUDE_WATCH_HOOK_PORT`) — config is the persisted default, env is the runtime override. **The iOS/watchOS clients must stop hardcoding `7860-7869`** (`BonjourDiscovery.swift:78,117`, `WatchBridgeClient.swift:50`, `OnboardingView.swift:115`); they should read the advertised port from the Bonjour TXT record the bridge already publishes (`_agent-iphone._tcp`). Rename the service type `_claude-watch._tcp → _agent-iphone._tcp` in lockstep on both sides, or keep the old type for v0.1.0 and rename later — but pick one and keep bridge + Swift in sync.
 
 ---
 
@@ -171,15 +171,15 @@ Env vars still override config (`PORT`, `WATCH_PAIR_CODE`, `CMUX_BIN`, `CLAUDE_W
 1. **Hardcoded pairing code.** `server.js:69` — `const FIXED_PAIRING_CODE = process.env.WATCH_PAIR_CODE || "******";`. Every OSS install ships the well-known code `******`; rate-limiting (`:70-71`, 5/5min) is irrelevant because the value is public in the repo. Because it's truthy, the code never rotates (`pairingCodeExpiresAt = MAX_SAFE_INTEGER`, `:154`) and is never cleared on pair (`:1096 if (!FIXED_PAIRING_CODE)`).
    **Fix:** `const FIXED_PAIRING_CODE = process.env.WATCH_PAIR_CODE || null;`. The `crypto.randomInt` else-branch at `:152` then produces a rotating 6-digit code with the 24h TTL, cleared after pairing. Keep the env override for users who want a fixed code. Wire `pairing.mode/fixedCode` from config.
 
-2. **Over-broad hook remover (data-loss).** `setup-hooks.sh:53-56` strips *any* hook whose URL `startswith('http://127.0.0.1:')` AND contains `'/hooks/'` — across all events. The same predicate runs on **install** dedupe (`:190-195`), so installing agent-watch silently deletes a user's unrelated localhost hooks (e.g. `http://127.0.0.1:9000/hooks/foo`). The comment at `:42` claims it scopes to claude-watch; the code does not.
-   **Fix:** scope to agent-watch's exact origin and route set. Match only `f'{HOOK_URL}/hooks/{name}'` for `name in {tool-output, pre-tool-use, session-start, session-end, permission, stop, error}` where `HOOK_URL = http://127.0.0.1:{hookPort}` (the script already knows the port at `:14`). Apply identically to install-dedupe `:190-195`. (When migrated to `lib/hooks.js`, implement once.)
+2. **Over-broad hook remover (data-loss).** `setup-hooks.sh:53-56` strips *any* hook whose URL `startswith('http://127.0.0.1:')` AND contains `'/hooks/'` — across all events. The same predicate runs on **install** dedupe (`:190-195`), so installing agent-iphone silently deletes a user's unrelated localhost hooks (e.g. `http://127.0.0.1:9000/hooks/foo`). The comment at `:42` claims it scopes to claude-watch; the code does not.
+   **Fix:** scope to agent-iphone's exact origin and route set. Match only `f'{HOOK_URL}/hooks/{name}'` for `name in {tool-output, pre-tool-use, session-start, session-end, permission, stop, error}` where `HOOK_URL = http://127.0.0.1:{hookPort}` (the script already knows the port at `:14`). Apply identically to install-dedupe `:190-195`. (When migrated to `lib/hooks.js`, implement once.)
 
 **P1 — private data / reproducibility (must fix before tag):**
 
 3. **Personal path in shipped script.** `run-in-cmux.sh:7` (comment) and `:12` (`NODE="/Users/limseungwon/.local/bin/node"`). Fix per §2.
 4. **Local cruft binary candidate.** `cmux.js:38` lists `/Applications/cmux 2.app/...` (a personal duplicate-install artifact). Remove that candidate; keep `cmux.app`, `CMUX_BIN` env (`:33`), and `which` fallback (`:44-47`).
 5. **`npm install` → `npm ci`.** `setup.sh:5`, `SKILL.md:25`, `.claude/skills/.../SKILL.md:25`, `README.md:80`, `REMOTE-SETUP.md:15` all use `npm install`, which can drift the committed lockfile. Switch to `npm ci` (fall back to `npm install` only if no lockfile). CLI `setup` does the same.
-6. **Stale dependency claim.** `SKILL.md:24` says agent-watch "requires the node-pty package." It does not — `package.json` has only `bonjour-service`; server.js uses `script -q /dev/null` + `spawn` (`server.js:340`). Remove the node-pty mention.
+6. **Stale dependency claim.** `SKILL.md:24` says agent-iphone "requires the node-pty package." It does not — `package.json` has only `bonjour-service`; server.js uses `script -q /dev/null` + `spawn` (`server.js:340`). Remove the node-pty mention.
 7. **Committed `.DS_Store`.** `skill/.DS_Store` is git-tracked (force-added before the ignore rule). `git rm --cached skill/.DS_Store`.
 
 **P2 — config unification (do alongside restructure, §3):**
@@ -192,24 +192,24 @@ Env vars still override config (`PORT`, `WATCH_PAIR_CODE`, `CMUX_BIN`, `CLAUDE_W
 
 ---
 
-## 5. The `agent-watch` CLI
+## 5. The `agent-iphone` CLI
 
-`bin/agent-watch.js` dispatches to `commands/<verb>.js`. **Every command is idempotent and safe to re-run.** All read/write the one `config.json`.
+`bin/agent-iphone.js` dispatches to `commands/<verb>.js`. **Every command is idempotent and safe to re-run.** All read/write the one `config.json`.
 
 | Command | Behavior |
 |---|---|
-| **`setup`** | Idempotent bootstrap. (1) Preflight: macOS, Node ≥18 (`engines`), warn if cmux/Tailscale absent. (2) Detect Claude/Codex/cmux binaries (reuse server.js `findBinary`). (3) `npm ci` deps. (4) Generate `config.json` if missing (merge, never clobber existing). (5) Generate hook-secret + session-token at `0600` **only if absent** (never rotate on re-run). (6) **Back up** `~/.claude/settings.json` (timestamped) then merge agent-watch hooks **scoped** (§4). (7) Choose runner: cmux present → register in-cmux workspace; absent → install LaunchAgent from template. (8) Start the bridge, then **health-check**: `GET /status` returns 200, and if cmux enabled, one cmux RPC succeeds. (9) Print success block (below). Re-running detects existing config/secrets/hooks and reports "already configured (no changes)" per step. |
+| **`setup`** | Idempotent bootstrap. (1) Preflight: macOS, Node ≥18 (`engines`), warn if cmux/Tailscale absent. (2) Detect Claude/Codex/cmux binaries (reuse server.js `findBinary`). (3) `npm ci` deps. (4) Generate `config.json` if missing (merge, never clobber existing). (5) Generate hook-secret + session-token at `0600` **only if absent** (never rotate on re-run). (6) **Back up** `~/.claude/settings.json` (timestamped) then merge agent-iphone hooks **scoped** (§4). (7) Choose runner: cmux present → register in-cmux workspace; absent → install LaunchAgent from template. (8) Start the bridge, then **health-check**: `GET /status` returns 200, and if cmux enabled, one cmux RPC succeeds. (9) Print success block (below). Re-running detects existing config/secrets/hooks and reports "already configured (no changes)" per step. |
 | **`doctor`** | Read-only diagnostics, **PASS/FAIL block designed to paste into a GitHub issue** (below). No secrets in output — show presence/perms, never values. |
 | **`status`** | Live runtime: is bridge up (probe `/status`), which runner, API addr (LAN + Tailscale), cmux mirror on/off, paired devices count, uptime. |
 | **`pair`** | Print current pairing code + TTL. `--new` forces rotation (rotating mode). In fixed mode, prints the fixed code and notes it does not expire. |
 | **`logs`** | `tail -f` `logDir/bridge.{out,err}.log` (LaunchAgent) or stream the cmux workspace output. `--lines N`, `--follow`. |
-| **`restart`** | Runner-aware: LaunchAgent → `launchctl kickstart -k gui/$UID/com.agentwatch.bridge`; cmux → restart the workspace (supervisor loop self-heals on process exit). |
-| **`uninstall`** | **Surgical.** Remove only agent-watch's scoped hooks (§4) from `settings.json` (restore from backup offered); `launchctl bootout` + delete `com.agentwatch.bridge.plist`; remove the cmux "Agent Bridge" workspace. `--purge` also deletes `dataDir` (secrets/config) and `logDir`. Default keeps user data. Prints exactly what it removed. |
+| **`restart`** | Runner-aware: LaunchAgent → `launchctl kickstart -k gui/$UID/com.agentiphone.bridge`; cmux → restart the workspace (supervisor loop self-heals on process exit). |
+| **`uninstall`** | **Surgical.** Remove only agent-iphone's scoped hooks (§4) from `settings.json` (restore from backup offered); `launchctl bootout` + delete `com.agentiphone.bridge.plist`; remove the cmux "Agent Bridge" workspace. `--purge` also deletes `dataDir` (secrets/config) and `logDir`. Default keeps user data. Prints exactly what it removed. |
 
 ### `setup` success-output mock
 
 ```
-✓ agent-watch setup complete
+✓ agent-iphone setup complete
 
   macOS 14.5 · Node v20.11.0 · cmux 0.63.2 detected
   Runner:        in-cmux supervisor (cmux mirror ON)
@@ -221,15 +221,15 @@ Env vars still override config (`PORT`, `WATCH_PAIR_CODE`, `CMUX_BIN`, `CLAUDE_W
   Health check:  /status 200 OK · cmux RPC OK · 7 workspaces visible
 
   Next:
-    1. Open the Agent Watch app on your iPhone
+    1. Open the Agent iPhone app on your iPhone
     2. Enter pairing code  408 213
-    3. agent-watch doctor   (if anything looks off)
+    3. agent-iphone doctor   (if anything looks off)
 ```
 
 ### `doctor` PASS/FAIL block (issue-pasteable)
 
 ```
-agent-watch doctor — v0.1.0
+agent-iphone doctor — v0.1.0
 ─────────────────────────────────────────────
 [PASS] macOS               14.5 (Darwin 24.6.0)
 [PASS] Node                v20.11.0 (>= 18 required)
@@ -237,14 +237,14 @@ agent-watch doctor — v0.1.0
 [PASS] hook-secret         present, perms 0600
 [PASS] session-token       present, perms 0600
 [PASS] Claude Code         /opt/homebrew/bin/claude
-[PASS] Claude hooks        7 agent-watch hooks installed (scoped)
+[PASS] Claude hooks        7 agent-iphone hooks installed (scoped)
 [WARN] Codex               not found (optional)
 [PASS] cmux                0.63.2 (/usr/local/bin/cmux)
 [PASS] cmux socket         ~/.local/state/cmux/cmux.sock reachable
 [PASS] Runner              in-cmux supervisor (pid 85394)
 [PASS] API listener        0.0.0.0:7860  /status 200
 [PASS] Hook listener       127.0.0.1:7861
-[PASS] Bonjour             advertising _agent-watch._tcp
+[PASS] Bonjour             advertising _agent-iphone._tcp
 [FAIL] Tailscale           not installed — remote access LAN-only
 ─────────────────────────────────────────────
 Result: 12 PASS · 1 WARN · 1 FAIL
@@ -254,7 +254,7 @@ Result: 12 PASS · 1 WARN · 1 FAIL
 
 ## 6. Homebrew Packaging
 
-**Tap:** GitHub repo `limseungwon/homebrew-tap` (the `homebrew-` prefix is implicit). Users run `brew install limseungwon/tap/agent-watch && brew services start agent-watch`. Formula at `Formula/agent-watch.rb`.
+**Tap:** GitHub repo `limseungwon/homebrew-tap` (the `homebrew-` prefix is implicit). Users run `brew install limseungwon/tap/agent-iphone && brew services start agent-iphone`. Formula at `Formula/agent-iphone.rb`.
 
 **Retire `install-launchd.sh` for brew users** — `brew services` generates and manages the LaunchAgent. Do NOT have the formula install its own plist at `brew install` time (fights `brew services`, fails `brew audit`). Keep `install-launchd.sh` only as the non-brew fallback path the CLI uses.
 
@@ -263,10 +263,10 @@ Result: 12 PASS · 1 WARN · 1 FAIL
 ### Formula sketch (vendored, ESM-safe wrapper, service block)
 
 ```ruby
-class AgentWatch < Formula
-  desc "Bridge Claude Code / cmux sessions to the Agent Watch iOS/watchOS app"
+class AgentIphone < Formula
+  desc "Bridge Claude Code / cmux sessions to the Agent iPhone iOS/watchOS app"
   homepage "https://github.com/limseungwon/claude-watch"
-  url "https://github.com/limseungwon/claude-watch/releases/download/v0.1.0/agent-watch-v0.1.0.tar.gz"
+  url "https://github.com/limseungwon/claude-watch/releases/download/v0.1.0/agent-iphone-v0.1.0.tar.gz"
   sha256 "REPLACE_WITH_SHA256"   # CI fills this in
   license "MIT"
 
@@ -276,43 +276,43 @@ class AgentWatch < Formula
 
   def install
     libexec.install Dir["*"]          # vendors bin/, bridge/, node_modules, etc.
-    (bin/"agent-watch").write <<~SH
+    (bin/"agent-iphone").write <<~SH
       #!/bin/bash
-      exec "#{Formula["node"].opt_bin}/node" "#{libexec}/bin/agent-watch.js" "$@"
+      exec "#{Formula["node"].opt_bin}/node" "#{libexec}/bin/agent-iphone.js" "$@"
     SH
   end
 
   service do
-    run [opt_bin/"agent-watch", "run"]   # "run" = foreground core server for the agent
+    run [opt_bin/"agent-iphone", "run"]   # "run" = foreground core server for the agent
     keep_alive true                       # == KeepAlive
     # run_type :immediate is default (== RunAtLoad) — omit
     working_dir    libexec
-    log_path       "#{Dir.home}/Library/Logs/agent-watch/bridge.out.log"
-    error_log_path "#{Dir.home}/Library/Logs/agent-watch/bridge.err.log"
+    log_path       "#{Dir.home}/Library/Logs/agent-iphone/bridge.out.log"
+    error_log_path "#{Dir.home}/Library/Logs/agent-iphone/bridge.err.log"
     environment_variables PATH: std_service_path_env, PORT: "7860"
   end
 
   test do
-    assert_match "agent-watch", shell_output("#{bin}/agent-watch --help", 0)
+    assert_match "agent-iphone", shell_output("#{bin}/agent-iphone --help", 0)
   end
 end
 ```
 
-Notes: `brew services start agent-watch` (NO `sudo`) gives a user LaunchAgent — required, since cmux is GUI-session-bound; `sudo brew services` makes a system daemon and breaks cmux. The service block only runs the **core** server; the cmux mirror still needs the in-cmux supervisor (§2) — document that `brew services` covers hook/phone, and `agent-watch setup` registers the cmux workspace separately. Reboot survival requires the user logged in (agents load on GUI session, same constraint `install-launchd.sh` already documents).
+Notes: `brew services start agent-iphone` (NO `sudo`) gives a user LaunchAgent — required, since cmux is GUI-session-bound; `sudo brew services` makes a system daemon and breaks cmux. The service block only runs the **core** server; the cmux mirror still needs the in-cmux supervisor (§2) — document that `brew services` covers hook/phone, and `agent-iphone setup` registers the cmux workspace separately. Reboot survival requires the user logged in (agents load on GUI session, same constraint `install-launchd.sh` already documents).
 
 ### CI: tag → tarball → sha256 → formula bump
 
 In the **app repo**, `on: release: types: [published]`:
 
-1. **Build the release artifact** — tar *only* the `agent-watch/` subtree (not the whole repo with iOS app + `recording.mp4`). Run `npm ci --omit=dev` first if vendoring; attach `agent-watch-${tag}.tar.gz` to the release.
+1. **Build the release artifact** — tar *only* the `agent-iphone/` subtree (not the whole repo with iOS app + `recording.mp4`). Run `npm ci --omit=dev` first if vendoring; attach `agent-iphone-${tag}.tar.gz` to the release.
 2. **Bump the formula** with `mislav/bump-homebrew-formula-action@v6`:
 
 ```yaml
 - uses: mislav/bump-homebrew-formula-action@v6
   with:
-    formula-name: agent-watch
+    formula-name: agent-iphone
     homebrew-tap: limseungwon/homebrew-tap
-    download-url: https://github.com/limseungwon/claude-watch/releases/download/${{ github.ref_name }}/agent-watch-${{ github.ref_name }}.tar.gz
+    download-url: https://github.com/limseungwon/claude-watch/releases/download/${{ github.ref_name }}/agent-iphone-${{ github.ref_name }}.tar.gz
   env:
     COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}   # classic PAT, repo + workflow scopes
 ```
@@ -334,7 +334,7 @@ It fetches the asset, computes `sha256`, and rewrites both `url` and `sha256` in
 4. REQUIRED — change the bundle identifier (this is the #1 fresh-clone blocker):
    In ios/ClaudeWatch/project.yml, replace `com.shobhit.claudewatch`
    (bundleIdPrefix + the two PRODUCT_BUNDLE_IDENTIFIER lines) with YOUR reverse-DNS
-   prefix, e.g. com.yourname.agentwatch. The watch app id MUST stay
+   prefix, e.g. com.yourname.agentiphone. The watch app id MUST stay
    <iphoneid>.watchkitapp or the Watch app won't pair. Re-run `xcodegen generate`.
 5. For BOTH targets (ClaudeWatch iOS + ClaudeWatchWatch): Signing →
    "Automatically manage signing" → select your own Personal Team.
@@ -357,7 +357,7 @@ Unlocks TestFlight (100 internal + 10k external testers, public invite links), r
 
 1. **P0 security fixes** — remove hardcoded `******` (`server.js:69`); scope the hook remover + install-dedupe (`setup-hooks.sh:53-56,190-195`). *(blocks any public tag)*
 2. **P1 cleanup** — `run-in-cmux.sh` personal path; drop `cmux 2.app`; `npm ci`; remove node-pty doc claim; untrack `.DS_Store`.
-3. **Repo restructure → `agent-watch/` package** + `config.json` + `config.js` loader; collapse scattered ports/paths.
+3. **Repo restructure → `agent-iphone/` package** + `config.json` + `config.js` loader; collapse scattered ports/paths.
 4. **CLI** — `setup` (idempotent), `doctor` (issue-pasteable), `status`, `pair`, `logs`, `restart`, `uninstall` (surgical). **This is the core deliverable — ship before Homebrew.**
 5. **Split topology** — setup chooses cmux-runner vs LaunchAgent; fix `cmux.js` `CMUX_SOCKET_PATH`; reconcile `install-launchd.sh` comment.
 6. **Honest docs** — README install-from-source flow, iOS build-it-yourself + bundle-ID rename + 7-day warning; reconcile the two SKILL.md files.
@@ -366,9 +366,9 @@ Unlocks TestFlight (100 internal + 10k external testers, public invite links), r
 
 **v0.2.0 — Homebrew on top (only after CLI is proven by hand):**
 
-9. Personal tap `limseungwon/homebrew-tap` + `Formula/agent-watch.rb` (vendored, ESM wrapper, `service do`).
-10. CI: release → `agent-watch/`-only tarball → `mislav/bump-homebrew-formula-action@v6` formula bump.
-11. `brew install limseungwon/tap/agent-watch && brew services start agent-watch` as the documented one-liner.
+9. Personal tap `limseungwon/homebrew-tap` + `Formula/agent-iphone.rb` (vendored, ESM wrapper, `service do`).
+10. CI: release → `agent-iphone/`-only tarball → `mislav/bump-homebrew-formula-action@v6` formula bump.
+11. `brew install limseungwon/tap/agent-iphone && brew services start agent-iphone` as the documented one-liner.
 
 **Later / explicitly deferred:**
 - Shape B topology (LaunchAgent core + in-cmux RPC proxy).
@@ -388,7 +388,7 @@ Unlocks TestFlight (100 internal + 10k external testers, public invite links), r
 **Must NEVER ship / commit:**
 - The literal pairing code (fixed at P0).
 - Any real `session-token`, `hook-secret`, `cmux-password` — these are runtime-generated and currently *not* git-tracked (verified). Keep it that way.
-- The generated `com.agentwatch.bridge.plist` (machine-specific absolute paths) — generated into `~/Library/LaunchAgents`, never committed.
+- The generated `com.agentiphone.bridge.plist` (machine-specific absolute paths) — generated into `~/Library/LaunchAgents`, never committed.
 - Personal absolute paths (the `run-in-cmux.sh` ones — fixed at P1).
 
 **`.gitignore` (add/verify):**
@@ -407,7 +407,7 @@ Untrack the already-committed `skill/.DS_Store`.
 **OSS essentials:**
 - **LICENSE** — MIT (matches the formula sketch; permissive, expected for a CLI + companion app).
 - **SECURITY.md** — report channel (email/issue), the trust model: bridge binds `0.0.0.0:7860` so it is reachable by anyone on the LAN/Tailnet; pairing code + per-device session-token are the auth boundary; hook listener is loopback-only + secret-gated. Advise running over Tailscale rather than exposing the LAN port publicly; note the bridge is **not** designed to face the open internet.
-- **README essentials** — what it is; the LAN/Tailnet trust model (one sentence so users don't expose it publicly); install-from-source (and later `brew`); the iOS build-it-yourself + 7-day/no-push caveats; `agent-watch doctor` as the first troubleshooting step; cmux is optional (hook/phone works without it).
+- **README essentials** — what it is; the LAN/Tailnet trust model (one sentence so users don't expose it publicly); install-from-source (and later `brew`); the iOS build-it-yourself + 7-day/no-push caveats; `agent-iphone doctor` as the first troubleshooting step; cmux is optional (hook/phone works without it).
 - **THIRD-PARTY / NOTICE** — single dep `bonjour-service` (MIT) — trivial, but list it.
 - Verify the repo's own attribution: `project.yml` and SKILL.md carry a prior author's identifiers (`com.shobhit.claudewatch`, "Claude Watch") — neutralize/reconcile before publishing under the new name.
 
