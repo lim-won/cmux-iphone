@@ -32,9 +32,9 @@ extension Color {
         self.init(.sRGB, red: r, green: g, blue: b, opacity: a)
     }
 
-    // MARK: - Agent iPhone design system
+    // MARK: - Cmux iPhone design system
     //
-    // Palette (from design/Agent iPhone.html):
+    // Palette (from design/Cmux iPhone.html):
     //   background #0A0A0B · surface #151517 · accent #EE7E38 ·
     //   approval #E8A735 · running #54C98A · deny #E5484D · text #F4F3F1
     // Rule: one color per state, used sparingly; hairline borders, not heavy strokes;

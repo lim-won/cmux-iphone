@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Agent iPhone</string>
+	<string>Cmux iPhone</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,10 +27,10 @@
 	</dict>
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_claude-watch._tcp</string>
+		<string>_cmux-iphone._tcp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Agent iPhone needs to find your Mac running the bridge server on your local network.</string>
+	<string>Cmux iPhone needs to find your Mac running the bridge server on your local network.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

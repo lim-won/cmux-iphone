@@ -747,7 +747,7 @@ private struct CmuxTerminalView: View {
 
     // Best-effort guess of the agent running in this terminal, from its live
     // screen. Only a seed for the Claude/Codex toggle — the user can flip it.
-    // (Avoids "claude" matching the claude-watch cwd by requiring strong markers.)
+    // (Avoids "claude" matching the cmux-iphone cwd by requiring strong markers.)
     private func detectAgent(from screen: String) -> String {
         let s = screen.lowercased()
         if s.contains("openai codex") || s.contains("codex cli") || s.contains("gpt-5") { return "codex" }

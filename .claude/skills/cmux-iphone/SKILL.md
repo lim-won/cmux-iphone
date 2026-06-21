@@ -1,5 +1,5 @@
 ---
-name: claude-watch
+name: cmux-iphone
 description: Bridge your Claude Code session to the Claude Watch app on Apple Watch
 author: shobhit
 version: 0.1.0
@@ -17,7 +17,7 @@ to the Claude Watch iOS/watchOS app.
 - Enables voice commands from your Apple Watch
 
 ## Usage
-Run `/claude-watch` to start the bridge.
+Run `/cmux-iphone` to start the bridge.
 Enter the pairing code in the Claude Watch iPhone app.
 
 ## Setup

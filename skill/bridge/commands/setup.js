@@ -1,4 +1,4 @@
-// agent-iphone setup — idempotent bootstrap. Safe to re-run: it never rotates
+// cmux-iphone setup — idempotent bootstrap. Safe to re-run: it never rotates
 // existing secrets, backs up Claude settings before merging hooks, and reports
 // "already configured" for steps that are already done.
 
@@ -21,7 +21,7 @@ export async function run(args = []) {
 
   // 1) Preflight
   if (process.platform !== "darwin") {
-    console.error("agent-iphone targets macOS.");
+    console.error("cmux-iphone targets macOS.");
     return 1;
   }
   const major = parseInt(process.versions.node, 10);
@@ -48,7 +48,7 @@ export async function run(args = []) {
       console.error("\n✗ cmux is installed but its control socket isn't reachable.");
       console.error("  Start cmux, configure its socket password, then re-run — OR run this");
       console.error("  command from INSIDE a cmux terminal. To skip cmux and use hook/phone");
-      console.error("  sessions only: agent-iphone setup --launchd");
+      console.error("  sessions only: cmux-iphone setup --launchd");
       return 1; // do NOT proceed with a cmux runner we can't drive
     }
     runner = "cmux";
@@ -93,12 +93,12 @@ export async function run(args = []) {
     await new Promise((r) => setTimeout(r, 700));
   }
   if (!up) {
-    console.error("\n✗ bridge did not come up. Check `agent-iphone logs` / `agent-iphone doctor`.");
+    console.error("\n✗ bridge did not come up. Check `cmux-iphone logs` / `cmux-iphone doctor`.");
     return 1;
   }
   console.log("✓ health check passed");
   if (runner === "cmux" && !(await cmux.cmuxReachable())) {
-    console.error("✗ bridge is up but cmux RPC is unreachable — see `agent-iphone doctor`.");
+    console.error("✗ bridge is up but cmux RPC is unreachable — see `cmux-iphone doctor`.");
     return 1;
   }
 
@@ -112,6 +112,6 @@ export async function run(args = []) {
     const pc = await api("GET", "/pair-code");
     if (pc.ok && pc.json && pc.json.code) console.log(`  Code:      ${pc.json.code}`);
   }
-  console.log("\nThen run 'agent-iphone doctor' if anything looks off.");
+  console.log("\nThen run 'cmux-iphone doctor' if anything looks off.");
   return 0;
 }

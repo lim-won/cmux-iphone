@@ -67,11 +67,11 @@ const PORT_RANGE_START = 7860;
 const PORT_RANGE_END = 7869;
 const PAIRING_CODE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 // Pairing code is ROTATING by default: a fresh random 6-digit code with a 24h
-// TTL, regenerated on restart and cleared after a device pairs. Set WATCH_PAIR_CODE
+// TTL, regenerated on restart and cleared after a device pairs. Set CMUX_IPHONE_PAIR_CODE
 // to pin a fixed code (survives restarts + re-pairing) for personal convenience.
 // NEVER ship a hardcoded default here — a baked-in code is public in the repo and
 // defeats pairing auth for every install.
-const FIXED_PAIRING_CODE = process.env.WATCH_PAIR_CODE || null;
+const FIXED_PAIRING_CODE = process.env.CMUX_IPHONE_PAIR_CODE || null;
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const RATE_LIMIT_MAX_ATTEMPTS = 5;
 const SSE_HEARTBEAT_INTERVAL_MS = 10_000;
@@ -86,7 +86,7 @@ const BRIDGE_ID = crypto.randomUUID();
 
 // Mobile web client (served at GET /) — lets an iPhone use the bridge from
 // Safari with no app install.
-let WEB_CLIENT_HTML = "<!doctype html><title>Agent iPhone</title><h1>web client missing</h1>";
+let WEB_CLIENT_HTML = "<!doctype html><title>Cmux iPhone</title><h1>web client missing</h1>";
 try {
   WEB_CLIENT_HTML = fs.readFileSync(new URL("./webclient.html", import.meta.url), "utf-8");
 } catch {
@@ -164,12 +164,12 @@ function generatePairingCode() {
 // every restart regenerates the token, invalidating the phone/watch pairing —
 // the app then gets stuck on "connecting" (401 on /events and /command) until
 // the user re-pairs. With persistence, one pairing survives reboots.
-const TOKEN_FILE = path.join(os.homedir(), "Library", "Application Support", "claude-watch", "session-token");
+const TOKEN_FILE = path.join(os.homedir(), "Library", "Application Support", "cmux-iphone", "session-token");
 
 // Hooks run on a separate loopback-only listener with a shared secret, so the
 // phone-facing listener never exposes hook routes (defense-in-depth).
 const HOOK_PORT = 7861;
-const SECRET_FILE = path.join(os.homedir(), "Library", "Application Support", "claude-watch", "hook-secret");
+const SECRET_FILE = path.join(os.homedir(), "Library", "Application Support", "cmux-iphone", "hook-secret");
 let hookSecret = null;
 
 function loadOrCreateHookSecret() {
@@ -1821,7 +1821,7 @@ async function handleDevicesRevoke(req, res) {
 }
 
 // GET /pair-code — the current pairing code, LOOPBACK-ONLY (for the local
-// agent-iphone CLI). Not exposed to LAN clients, so it needs no token.
+// cmux-iphone CLI). Not exposed to LAN clients, so it needs no token.
 function handlePairCode(req, res) {
   const remote = req.socket.remoteAddress || "";
   const isLoopback = remote === "127.0.0.1" || remote === "::1" || remote === "::ffff:127.0.0.1";
@@ -1993,7 +1993,7 @@ async function onHookRequest(req, res) {
   if (!isLocalRequest(req)) {
     return jsonResponse(res, 403, { error: "Forbidden" });
   }
-  if (hookSecret && req.headers["x-claude-watch-secret"] !== hookSecret) {
+  if (hookSecret && req.headers["x-cmux-iphone-secret"] !== hookSecret) {
     return jsonResponse(res, 403, { error: "Forbidden" });
   }
   await dispatch(req, res, `${req.method} ${url.pathname}`);
@@ -2060,8 +2060,8 @@ async function startServer() {
   // Bonjour
   bonjourInstance = new Bonjour();
   bonjourService = bonjourInstance.publish({
-    name: `Agent iPhone Bridge (${os.hostname()})`,
-    type: "claude-watch",
+    name: `Cmux iPhone Bridge (${os.hostname()})`,
+    type: "cmux-iphone",
     protocol: "tcp",
     port: boundPort,
     txt: {
@@ -2072,7 +2072,7 @@ async function startServer() {
     },
   });
 
-  log("info", `Bonjour advertising _claude-watch._tcp on port ${boundPort}`);
+  log("info", `Bonjour advertising _cmux-iphone._tcp on port ${boundPort}`);
   startCodexMonitor();
 
   const agents = [];

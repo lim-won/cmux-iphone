@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="logo.png" width="140" alt="Agent iPhone" />
+  <img src="logo.png" width="140" alt="Cmux iPhone" />
 </p>
 
-<h1 align="center"><strong>Agent iPhone</strong></h1>
+<h1 align="center"><strong>Cmux iPhone</strong></h1>
 
 <p align="center">
   Watch and control your <strong>Claude Code</strong>, <strong>Codex</strong>, and <strong>cmux</strong>
@@ -17,12 +17,12 @@ https://github.com/user-attachments/assets/5f478c28-2086-4696-9d76-e43dda853201
 ## How it works (two halves)
 
 ```
-   iPhone / Watch  ──HTTP+SSE──►  agent-iphone bridge (Node)  ──hooks──►  Claude Code
+   iPhone / Watch  ──HTTP+SSE──►  cmux-iphone bridge (Node)  ──hooks──►  Claude Code
    (SwiftUI app)   ◄────────────  on your Mac                 ──RPC───►  cmux mirror
                                                               ──log───►  Codex
 ```
 
-- **Bridge (Mac):** a small Node server (`agent-iphone`) that receives Claude Code
+- **Bridge (Mac):** a small Node server (`cmux-iphone`) that receives Claude Code
   hook events, mirrors live cmux workspaces, watches Codex, and serves the phone
   over HTTP + Server-Sent Events. Discovered on the LAN via Bonjour.
 - **App (iPhone + Watch):** a SwiftUI app that pairs with the bridge, shows live
@@ -55,17 +55,17 @@ The bridge binds the LAN; a pairing code + per-device token are the auth boundar
 ## Install — the Mac bridge
 
 ```bash
-git clone https://github.com/lim-won/agent-iphone && cd agent-iphone/skill/bridge
+git clone https://github.com/lim-won/cmux-iphone && cd cmux-iphone/skill/bridge
 npm ci                        # reproducible install (use `npm install` if no lockfile)
-npm link                      # optional: puts `agent-iphone` on your PATH
-agent-iphone setup             # or: node bin/agent-iphone.js setup
+npm link                      # optional: puts `cmux-iphone` on your PATH
+cmux-iphone setup             # or: node bin/cmux-iphone.js setup
 ```
 
-`agent-iphone setup` is **idempotent** (safe to re-run). It:
+`cmux-iphone setup` is **idempotent** (safe to re-run). It:
 
 1. checks macOS + Node 18+, detects Claude/Codex/cmux/Tailscale,
 2. writes `config.json` and generates secrets (`0600`, never rotated on re-run),
-3. **backs up** `~/.claude/settings.json` and merges Agent iPhone's hooks (scoped —
+3. **backs up** `~/.claude/settings.json` and merges Cmux iPhone's hooks (scoped —
    it never touches another tool's hooks),
 4. picks a runner — **in-cmux** when cmux is present (so the live mirror works), or
    a **LaunchAgent** when it isn't,
@@ -82,31 +82,31 @@ reachable** when you run setup (configure cmux's socket password if it uses one)
 Then:
 
 ```bash
-agent-iphone setup --cmux     # fails fast if cmux RPC isn't reachable (instead of half-installing)
-agent-iphone doctor           # confirm:  cmux RPC = mobile.workspace.list OK
+cmux-iphone setup --cmux     # fails fast if cmux RPC isn't reachable (instead of half-installing)
+cmux-iphone doctor           # confirm:  cmux RPC = mobile.workspace.list OK
 ```
 
 If cmux is installed but its socket isn't reachable, setup stops and tells you —
 it won't silently start a bridge that can't mirror. To skip cmux entirely and run
-hook/phone/Codex sessions only: `agent-iphone setup --launchd`.
+hook/phone/Codex sessions only: `cmux-iphone setup --launchd`.
 
 Manage it with the CLI:
 
 | Command | What it does |
 |---|---|
-| `agent-iphone setup` | install / repair (idempotent) |
-| `agent-iphone doctor` | read-only diagnostics — **paste this into a GitHub issue** |
-| `agent-iphone status` | bridge state, LAN/Tailscale address, cmux, paired devices |
-| `agent-iphone pair` | show the pairing code · `--list` · `--revoke <id>` |
-| `agent-iphone logs` | tail the bridge log |
-| `agent-iphone restart` | restart the bridge |
-| `agent-iphone uninstall` | remove hooks + service (`--purge` also deletes data) |
+| `cmux-iphone setup` | install / repair (idempotent) |
+| `cmux-iphone doctor` | read-only diagnostics — **paste this into a GitHub issue** |
+| `cmux-iphone status` | bridge state, LAN/Tailscale address, cmux, paired devices |
+| `cmux-iphone pair` | show the pairing code · `--list` · `--revoke <id>` |
+| `cmux-iphone logs` | tail the bridge log |
+| `cmux-iphone restart` | restart the bridge |
+| `cmux-iphone uninstall` | remove hooks + service (`--purge` also deletes data) |
 
 ---
 
 ## Install — the iPhone / Watch app (build it yourself)
 
-There is **no App Store / TestFlight build** — Agent iPhone is distributed as
+There is **no App Store / TestFlight build** — Cmux iPhone is distributed as
 source and you build it with your own free Apple ID. (TestFlight requires a paid
 Apple Developer Program; a public binary may come later if the project enrolls.)
 
@@ -114,7 +114,7 @@ Apple Developer Program; a public binary may come later if the project enrolls.)
 Watch id, and the Watch's companion id all derive from it):
 
 ```bash
-./scripts/configure-ios.sh com.yourname.agentiphone
+./scripts/configure-ios.sh com.yourname.cmuxiphone
 open ios/ClaudeWatch/ClaudeWatch.xcodeproj
 ```
 
@@ -146,12 +146,12 @@ Management → tap your developer profile → **Trust**.
 
 ### Pair
 
-1. Open the app → enter the **pairing code** from `agent-iphone pair`.
+1. Open the app → enter the **pairing code** from `cmux-iphone pair`.
 2. Same Wi-Fi → the bridge is auto-discovered (Bonjour). Otherwise enter the
-   Mac's IP/Tailscale address shown by `agent-iphone status`.
+   Mac's IP/Tailscale address shown by `cmux-iphone status`.
 
 Each device gets its **own token**; revoke any of them with
-`agent-iphone pair --revoke <id>` (see `agent-iphone pair --list`).
+`cmux-iphone pair --revoke <id>` (see `cmux-iphone pair --list`).
 
 > **Watch approvals (beta):** the Watch *shows* approvals but you answer them on
 > the iPhone for now.
@@ -160,17 +160,17 @@ Each device gets its **own token**; revoke any of them with
 
 ## Troubleshooting
 
-Run **`agent-iphone doctor`** first — it prints a PASS/WARN/FAIL report (no
+Run **`cmux-iphone doctor`** first — it prints a PASS/WARN/FAIL report (no
 secrets) that's ideal to paste into an issue.
 
 - **iPhone "Connection failed":** `curl http://127.0.0.1:7860/health` (note:
   `/status` requires auth). Bridge + phone must share the LAN (or Tailscale).
 - **No cmux workspaces:** cmux only mirrors when the bridge runs *inside* cmux
-  (`agent-iphone status` shows the runner). Without cmux you still get hook sessions.
+  (`cmux-iphone status` shows the runner). Without cmux you still get hook sessions.
 - **Watch can't find the bridge:** same Wi-Fi; turn **off** Private Wi-Fi Address
   on the watch's network (Bonjour); or enter the IP manually.
 - **Permission prompts don't appear:** confirm hooks in `~/.claude/settings.json`
-  and that a device is paired (`agent-iphone pair --list`).
+  and that a device is paired (`cmux-iphone pair --list`).
 
 ---
 
@@ -204,7 +204,7 @@ Full model + reporting in [`SECURITY.md`](SECURITY.md).
 
 MIT — see [`LICENSE`](LICENSE).
 
-Agent iPhone is a fork of [shobhit99/claude-watch](https://github.com/shobhit99/claude-watch)
+Cmux iPhone is a fork of [shobhit99/claude-watch](https://github.com/shobhit99/claude-watch)
 (MIT); original-author copyright is preserved. See [`NOTICE.md`](NOTICE.md) for
 attribution and trademark notes ("Claude" and its logo are Anthropic trademarks;
 this is an independent community tool, not affiliated with Anthropic).

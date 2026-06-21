@@ -1,7 +1,7 @@
 {
-  "name": "claude-watch-bridge",
+  "name": "cmux-iphone-bridge",
   "version": "1.0.0",
-  "description": "Bridge server between Claude Code and Agent iPhone iOS app",
+  "description": "Bridge server between Claude Code and Cmux iPhone iOS app",
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -16,6 +16,6 @@
     "bonjour-service": "^1.3.0"
   },
   "bin": {
-    "agent-iphone": "./bin/agent-iphone.js"
+    "cmux-iphone": "./bin/cmux-iphone.js"
   }
 }

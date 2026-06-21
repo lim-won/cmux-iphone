@@ -1,20 +1,20 @@
 // lib/config.js — single source of truth for ports, paths, and secrets.
 //
-// Both the bridge (server.js) and the agent-iphone CLI read from here. Values
+// Both the bridge (server.js) and the cmux-iphone CLI read from here. Values
 // come from config.json (if present) merged over built-in defaults; env vars
-// still override at runtime (PORT, CLAUDE_WATCH_HOOK_PORT, CMUX_BIN, …).
+// still override at runtime (PORT, CMUX_IPHONE_HOOK_PORT, CMUX_BIN, …).
 //
-// NOTE: the data dir is still "claude-watch" for backward compatibility with
+// NOTE: the data dir is still "cmux-iphone" for backward compatibility with
 // existing installs (secrets/tokens already live there). The rename to
-// "agent-iphone" is a deliberate later migration, not a silent move.
+// "cmux-iphone" is a deliberate later migration, not a silent move.
 
 import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 
 const HOME = os.homedir();
-const DATA_DIR = path.join(HOME, "Library", "Application Support", "claude-watch");
-const LOG_DIR = path.join(HOME, "Library", "Logs", "claude-watch");
+const DATA_DIR = path.join(HOME, "Library", "Application Support", "cmux-iphone");
+const LOG_DIR = path.join(HOME, "Library", "Logs", "cmux-iphone");
 const CONFIG_FILE = path.join(DATA_DIR, "config.json");
 
 export const paths = {
@@ -24,9 +24,9 @@ export const paths = {
   sessionTokenFile: path.join(DATA_DIR, "session-token"), // legacy single token (migrated)
   devicesFile: path.join(DATA_DIR, "devices.json"),       // per-device tokens
   hookSecretFile: path.join(DATA_DIR, "hook-secret"),
-  cmuxPasswordFile: path.join(HOME, ".config", "claude-watch", "cmux-password"),
-  plistLabel: "com.agentiphone.bridge",
-  launchAgentPlist: path.join(HOME, "Library", "LaunchAgents", "com.agentiphone.bridge.plist"),
+  cmuxPasswordFile: path.join(HOME, ".config", "cmux-iphone", "cmux-password"),
+  plistLabel: "com.cmuxiphone.bridge",
+  launchAgentPlist: path.join(HOME, "Library", "LaunchAgents", "com.cmuxiphone.bridge.plist"),
 };
 
 const DEFAULTS = {

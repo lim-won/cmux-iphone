@@ -166,7 +166,7 @@ private class BonjourBrowser {
     func search(completion: @escaping (URL?) -> Void) {
         var hasCompleted = false
 
-        let descriptor = NWBrowser.Descriptor.bonjour(type: "_claude-watch._tcp", domain: nil)
+        let descriptor = NWBrowser.Descriptor.bonjour(type: "_cmux-iphone._tcp", domain: nil)
         let params = NWParameters()
         params.includePeerToPeer = true
 

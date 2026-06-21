@@ -1,4 +1,4 @@
-// agent-iphone restart — restart the bridge (runner-aware).
+// cmux-iphone restart — restart the bridge (runner-aware).
 
 import { execFileSync } from "node:child_process";
 import os from "node:os";
@@ -13,12 +13,12 @@ export async function run() {
       return 0;
     } catch (e) {
       console.log(`launchctl kickstart failed: ${e.message}`);
-      console.log("Is the LaunchAgent installed? Try 'agent-iphone setup'.");
+      console.log("Is the LaunchAgent installed? Try 'cmux-iphone setup'.");
       return 1;
     }
   }
   console.log("Runner is cmux (or unset): the in-cmux supervisor relaunches the bridge");
   console.log('automatically when it exits. To force a restart, close + reopen the');
-  console.log('"Agent Bridge" cmux workspace, or run \'agent-iphone setup\'.');
+  console.log('"Agent Bridge" cmux workspace, or run \'cmux-iphone setup\'.');
   return 0;
 }

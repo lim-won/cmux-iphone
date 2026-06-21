@@ -1,5 +1,5 @@
-// agent-iphone uninstall — remove Agent iPhone's hooks + service. Surgical:
-// only Agent iPhone's own pieces. --purge also deletes config/secrets/logs.
+// cmux-iphone uninstall — remove Cmux iPhone's hooks + service. Surgical:
+// only Cmux iPhone's own pieces. --purge also deletes config/secrets/logs.
 
 import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";

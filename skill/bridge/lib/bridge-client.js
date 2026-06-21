@@ -1,4 +1,4 @@
-// lib/bridge-client.js — helpers for the agent-iphone CLI to talk to the LOCAL
+// lib/bridge-client.js — helpers for the cmux-iphone CLI to talk to the LOCAL
 // bridge. The CLI runs on the same Mac, so it reads a device token straight
 // from devices.json (0600, same user) for authed endpoints.
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Agent iPhone — Install global hooks so ALL Claude Code sessions stream to the bridge.
+# Cmux iPhone — Install global hooks so ALL Claude Code sessions stream to the bridge.
 #
 # Usage: ./setup-hooks.sh [port]
 #   port: bridge server port (default: 7860)
@@ -11,10 +11,10 @@ set -e
 
 PORT="${1:-7860}"
 BRIDGE_URL="http://127.0.0.1:${PORT}"          # phone API listener (status check)
-HOOK_PORT="${CLAUDE_WATCH_HOOK_PORT:-7861}"
+HOOK_PORT="${CMUX_IPHONE_HOOK_PORT:-7861}"
 HOOK_URL="http://127.0.0.1:${HOOK_PORT}"        # loopback hook listener (secret-gated)
 SETTINGS="$HOME/.claude/settings.json"
-SECRET_FILE="$HOME/Library/Application Support/claude-watch/hook-secret"
+SECRET_FILE="$HOME/Library/Application Support/cmux-iphone/hook-secret"
 
 # Shared hook secret — must match what the bridge uses. Create it if neither the
 # bridge nor a prior install has yet (the bridge honors an existing file).
@@ -39,7 +39,7 @@ if [ "$1" = "--remove" ]; then
     exit 0
   fi
 
-  # Remove ONLY Agent iPhone's own hooks — matched by our exact loopback origin
+  # Remove ONLY Cmux iPhone's own hooks — matched by our exact loopback origin
   # + route set, so we never delete another tool's localhost hooks.
   python3 -c "
 import json, sys
@@ -77,16 +77,16 @@ if changed:
         del settings['hooks']
     with open('$SETTINGS', 'w') as f:
         json.dump(settings, f, indent=2)
-    print('Agent iPhone hooks removed from $SETTINGS')
+    print('Cmux iPhone hooks removed from $SETTINGS')
 else:
-    print('No Agent iPhone hooks found.')
+    print('No Cmux iPhone hooks found.')
 "
   exit 0
 fi
 
 # ── Install mode ─────────────────────────────────────────────────────────────
 
-echo "Installing Agent iPhone hooks..."
+echo "Installing Cmux iPhone hooks..."
 echo "  Bridge URL: ${BRIDGE_URL}"
 echo "  Settings:   ${SETTINGS}"
 echo ""
@@ -106,7 +106,7 @@ if [ ! -f "$SETTINGS" ]; then
 else
   # Back up before we modify it (the hook headers embed the secret). Keep the
   # backup private — it contains the same secret as the live file.
-  BACKUP="${SETTINGS}.agentiphone.bak.$(date +%Y%m%d%H%M%S)"
+  BACKUP="${SETTINGS}.cmuxiphone.bak.$(date +%Y%m%d%H%M%S)"
   cp "$SETTINGS" "$BACKUP" && chmod 600 "$BACKUP"
   echo "  Backed up existing settings → ${BACKUP}"
 fi
@@ -117,7 +117,7 @@ import json
 
 BRIDGE = '${HOOK_URL}'
 SECRET = '${HOOK_SECRET}'
-HEADERS = {'X-Claude-Watch-Secret': SECRET}
+HEADERS = {'X-Cmux-Iphone-Secret': SECRET}
 
 # The hooks we want to install
 new_hooks = {
@@ -195,7 +195,7 @@ with open('$SETTINGS', 'r') as f:
 
 existing_hooks = settings.get('hooks', {})
 
-# Agent iPhone's own hook URLs (exact) — used to replace our prior install without
+# Cmux iPhone's own hook URLs (exact) — used to replace our prior install without
 # touching another tool's localhost hooks. BRIDGE is our loopback hook origin.
 AW_ROUTES = ('tool-output', 'pre-tool-use', 'session-start', 'session-end', 'permission', 'stop', 'error')
 AW_URLS = {f'{BRIDGE}/hooks/{r}' for r in AW_ROUTES}
@@ -255,11 +255,11 @@ if command -v codex &>/dev/null; then
 
   cat > "$WRAPPER" << 'WRAPPER_EOF'
 #!/bin/bash
-# codex-watch: Runs Codex and streams events to Agent iPhone bridge.
+# codex-watch: Runs Codex and streams events to Cmux iPhone bridge.
 # Drop-in replacement for `codex` — use `codex-watch` instead.
-API_URL="http://127.0.0.1:${CLAUDE_WATCH_PORT:-7860}"
-HOOK_URL="http://127.0.0.1:${CLAUDE_WATCH_HOOK_PORT:-7861}"
-SECRET="$(cat "$HOME/Library/Application Support/claude-watch/hook-secret" 2>/dev/null)"
+API_URL="http://127.0.0.1:${CMUX_IPHONE_PORT:-7860}"
+HOOK_URL="http://127.0.0.1:${CMUX_IPHONE_HOOK_PORT:-7861}"
+SECRET="$(cat "$HOME/Library/Application Support/cmux-iphone/hook-secret" 2>/dev/null)"
 
 # If bridge isn't running, just run codex normally
 if ! curl -s --connect-timeout 1 "${API_URL}/status" > /dev/null 2>&1; then
@@ -281,7 +281,7 @@ codex "$@" --json 2>/dev/null | while IFS= read -r line; do
       # Forward the whole event — let the bridge parse it
       curl -s -X POST "${HOOK_URL}/hooks/tool-output" \
         -H "Content-Type: application/json" \
-        -H "X-Claude-Watch-Secret: ${SECRET}" \
+        -H "X-Cmux-Iphone-Secret: ${SECRET}" \
         -d "$(echo "$line" | python3 -c "
 import sys,json
 e=json.load(sys.stdin)
@@ -305,7 +305,7 @@ else:
     turn.completed)
       curl -s -X POST "${HOOK_URL}/hooks/stop" \
         -H "Content-Type: application/json" \
-        -H "X-Claude-Watch-Secret: ${SECRET}" \
+        -H "X-Cmux-Iphone-Secret: ${SECRET}" \
         -d '{"source":"codex"}' > /dev/null 2>&1 &
       ;;
   esac

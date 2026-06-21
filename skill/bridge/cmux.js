@@ -52,7 +52,7 @@ const CMUX_BIN = findCmuxBin();
 // which runs OUTSIDE cmux — authenticate to the cmux control socket.
 const CMUX_PASSWORD = (() => {
   try {
-    return fs.readFileSync(`${process.env.HOME}/.config/claude-watch/cmux-password`, "utf-8").trim() || null;
+    return fs.readFileSync(`${process.env.HOME}/.config/cmux-iphone/cmux-password`, "utf-8").trim() || null;
   } catch { return null; }
 })();
 

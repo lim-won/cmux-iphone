@@ -1,8 +1,8 @@
-// agent-iphone pair — show the pairing code; manage paired devices.
+// cmux-iphone pair — show the pairing code; manage paired devices.
 //
-//   agent-iphone pair                 show the current pairing code
-//   agent-iphone pair --list          list paired devices
-//   agent-iphone pair --revoke <id>   revoke one device's token
+//   cmux-iphone pair                 show the current pairing code
+//   cmux-iphone pair --list          list paired devices
+//   cmux-iphone pair --revoke <id>   revoke one device's token
 
 import { api, readAnyToken } from "../lib/bridge-client.js";
 
@@ -16,7 +16,7 @@ export async function run(args) {
 async function showCode() {
   const r = await api("GET", "/pair-code"); // loopback-only on the bridge
   if (!r.ok) {
-    console.log("Bridge not reachable. Check 'agent-iphone status'.");
+    console.log("Bridge not reachable. Check 'cmux-iphone status'.");
     return 1;
   }
   const { code, fixed, expiresAt } = r.json || {};
@@ -26,7 +26,7 @@ async function showCode() {
   }
   console.log(`Pairing code: ${code}${fixed ? "  (fixed)" : ""}`);
   if (expiresAt) console.log(`Expires:      ${new Date(expiresAt).toLocaleString()}`);
-  console.log("\nEnter this code in the Agent iPhone app on your iPhone.");
+  console.log("\nEnter this code in the Cmux iPhone app on your iPhone.");
   return 0;
 }
 
@@ -51,13 +51,13 @@ async function list() {
     const seen = d.lastSeen ? `  (last seen ${new Date(d.lastSeen).toLocaleString()})` : "";
     console.log(`  ${d.id}  ${d.name}${seen}`);
   }
-  console.log("\nRevoke one with: agent-iphone pair --revoke <id>");
+  console.log("\nRevoke one with: cmux-iphone pair --revoke <id>");
   return 0;
 }
 
 async function revoke(id) {
   if (!id) {
-    console.log("Usage: agent-iphone pair --revoke <deviceId>   (see 'agent-iphone pair --list')");
+    console.log("Usage: cmux-iphone pair --revoke <deviceId>   (see 'cmux-iphone pair --list')");
     return 1;
   }
   const token = readAnyToken();

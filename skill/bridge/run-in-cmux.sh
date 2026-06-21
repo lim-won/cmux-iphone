@@ -1,11 +1,11 @@
 #!/bin/bash
-# Run the Agent iPhone bridge INSIDE cmux (a cmux workspace/surface) so it shares
+# Run the Cmux iPhone bridge INSIDE cmux (a cmux workspace/surface) so it shares
 # cmux's GUI login session and can reach the cmux control socket. A launchd
 # agent runs in a different audit session that cmux's socket rejects, so the
 # cmux-mirror feature requires the bridge to live in-session.
 #
 # Launch with:  cmux workspace create --name "Agent Bridge" --command "<path>/run-in-cmux.sh"
-# (agent-iphone setup registers this automatically when cmux is present.)
+# (cmux-iphone setup registers this automatically when cmux is present.)
 # Restart loop keeps the bridge up across crashes; cmux session-restore brings
 # this workspace back after a cmux restart.
 

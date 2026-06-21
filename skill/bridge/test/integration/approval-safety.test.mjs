@@ -21,8 +21,8 @@ import path from "node:path";
 const execFileP = promisify(execFile);
 const API = "http://127.0.0.1:7860";
 
-const PW = readMaybe(path.join(os.homedir(), ".config", "claude-watch", "cmux-password"));
-const TOKEN = readMaybe(path.join(os.homedir(), "Library", "Application Support", "claude-watch", "session-token"));
+const PW = readMaybe(path.join(os.homedir(), ".config", "cmux-iphone", "cmux-password"));
+const TOKEN = readMaybe(path.join(os.homedir(), "Library", "Application Support", "cmux-iphone", "session-token"));
 
 function readMaybe(p) {
   try { return fs.readFileSync(p, "utf-8").trim() || null; } catch { return null; }

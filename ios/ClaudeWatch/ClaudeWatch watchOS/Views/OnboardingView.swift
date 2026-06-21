@@ -18,7 +18,7 @@ struct OnboardingView: View {
             // Compact header — one line
             HStack(spacing: 4) {
                 AppLogo(size: 22)
-                Text("Agent iPhone")
+                Text("Cmux iPhone")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(Theme.Text.primary)
             }

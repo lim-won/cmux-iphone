@@ -60,7 +60,7 @@ struct PairingView: View {
 
     private var titleSection: some View {
         VStack(spacing: 8) {
-            Text("Agent iPhone")
+            Text("Cmux iPhone")
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(Color.textPrimary)
 
@@ -276,7 +276,7 @@ struct PairingView: View {
                 await MainActor.run {
                     switch error {
                     case .permissionDenied:
-                        showPairingError("로컬 네트워크 접근이 꺼져 있습니다. 설정 → 개인정보 보호 및 보안 → 로컬 네트워크에서 Agent iPhone을 켜고 앱을 재실행하세요.")
+                        showPairingError("로컬 네트워크 접근이 꺼져 있습니다. 설정 → 개인정보 보호 및 보안 → 로컬 네트워크에서 Cmux iPhone을 켜고 앱을 재실행하세요.")
                     case .noServiceFound:
                         if !showManualIP {
                             showManualIP = true

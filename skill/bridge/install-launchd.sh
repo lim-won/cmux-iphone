@@ -1,12 +1,12 @@
 #!/bin/bash
-# install-launchd.sh — run the Agent iPhone bridge 24/7 as a LaunchAgent.
+# install-launchd.sh — run the Cmux iPhone bridge 24/7 as a LaunchAgent.
 #
 # SCOPE: this LaunchAgent serves the CORE bridge only — hook receiver, phone/SSE
 # API, pairing, and Codex log monitoring. It does NOT drive the cmux live mirror:
 # empirically, a launchd-spawned process cannot complete a cmux control-socket
 # RPC (it fails at setsockopt; the socket is gated by the GUI session, not by the
 # password). The cmux mirror requires the in-cmux supervisor (run-in-cmux.sh),
-# which `agent-iphone setup` registers as a cmux workspace when cmux is present.
+# which `cmux-iphone setup` registers as a cmux workspace when cmux is present.
 #
 # LaunchAgent (not LaunchDaemon) so it runs in your logged-in user session. For
 # it to come back after a REBOOT untouched, enable automatic login
@@ -20,7 +20,7 @@ set -euo pipefail
 
 LABEL="com.claudewatch.bridge"
 PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
-LOG_DIR="$HOME/Library/Logs/claude-watch"
+LOG_DIR="$HOME/Library/Logs/cmux-iphone"
 UID_NUM="$(id -u)"
 
 if [ "${1:-}" = "--remove" ]; then

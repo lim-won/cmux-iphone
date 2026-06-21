@@ -1,9 +1,9 @@
 import Foundation
 import Network
 
-/// Discovers `_claude-watch._tcp` services on the local network using NWBrowser.
+/// Discovers `_cmux-iphone._tcp` services on the local network using NWBrowser.
 /// Requires the local network privacy entitlement on iOS 14+.
-/// (Service type kept as `_claude-watch._tcp` for backward compatibility with bridge.)
+/// (Service type kept as `_cmux-iphone._tcp` for backward compatibility with bridge.)
 final class BonjourDiscovery: ObservableObject {
 
     // MARK: - Types
@@ -26,7 +26,7 @@ final class BonjourDiscovery: ObservableObject {
             case .timeout:
                 return "Discovery timed out after 5 seconds."
             case .noServiceFound:
-                return "No Agent iPhone bridge found on your network."
+                return "No Cmux iPhone bridge found on your network."
             case .permissionDenied:
                 return "Local network access was denied. Enable it in Settings > Privacy > Local Network."
             case .browsingFailed(let reason):
@@ -153,7 +153,7 @@ final class BonjourDiscovery: ObservableObject {
                 continuation.resume(with: result)
             }
 
-            let descriptor = NWBrowser.Descriptor.bonjour(type: "_claude-watch._tcp", domain: nil)
+            let descriptor = NWBrowser.Descriptor.bonjour(type: "_cmux-iphone._tcp", domain: nil)
             let parameters = NWParameters()
             parameters.includePeerToPeer = true
 
