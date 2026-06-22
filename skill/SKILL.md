@@ -18,7 +18,7 @@ to the Cmux iPhone iOS/watchOS app.
 
 ## Usage
 Run `/cmux-iphone` to start the bridge.
-Enter the pairing code in the Cmux iPhone iPhone app.
+Enter the pairing code in the Cmux iPhone app.
 
 ## Setup
 The bridge requires Node.js 18+ (its only dependency is `bonjour-service`).

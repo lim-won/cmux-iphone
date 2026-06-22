@@ -5,6 +5,12 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/lim-won/cmux-iphone/actions/workflows/ci.yml"><img src="https://github.com/lim-won/cmux-iphone/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"/>
+  <img src="https://img.shields.io/github/v/release/lim-won/cmux-iphone" alt="Release"/>
+</p>
+
+<p align="center">
   Watch and control your <strong>Claude Code</strong>, <strong>Codex</strong>, and <strong>cmux</strong>
   sessions from your iPhone (and Apple Watch).<br/>
   See live terminal output and send prompts; approve permission requests on iPhone and monitor them on Apple Watch — over your LAN or Tailscale.
@@ -178,7 +184,7 @@ You don't need to be a developer — it's two commands at most:
 
 ```text
 $ cmux-iphone pair
-Pairing code: ******
+Pairing code: 000000
 Enter this code in the Cmux iPhone app on your iPhone.
 ```
 
@@ -194,6 +200,54 @@ Enter this code in the Cmux iPhone app on your iPhone.
 
 > **Watch approvals (beta):** the Watch *shows* approvals but you answer them on
 > the iPhone for now.
+
+---
+
+## Remote access over Tailscale
+
+The bridge speaks plain HTTP and is built for your LAN or a private
+[Tailscale](https://tailscale.com) tailnet — **never the open internet**. Tailscale
+lets your iPhone reach your Mac from anywhere, as if they were on the same Wi-Fi.
+
+**1. Install Tailscale on both devices, same account.**
+
+```bash
+brew install --cask tailscale     # Mac (or download the app), then sign in
+```
+
+On the iPhone, install **Tailscale** from the App Store and sign in with the **same**
+account. Both devices now share one private tailnet.
+
+**2. Find your Mac's Tailscale address.**
+
+```bash
+cmux-iphone status
+# Tailscale: http://100.x.y.z:7860
+```
+
+`100.x.y.z` is your Mac's tailnet IP. With **MagicDNS** enabled (Tailscale admin
+console) you can use the Mac's hostname instead (e.g. `your-mac`).
+
+**3. Pair the phone with that address.** Bonjour auto-discovery only works on the
+same Wi-Fi and **does not cross the tailnet**, so for remote access enter the address
+by hand: in the app tap **Enter IP manually**, type the `100.x.y.z` (or MagicDNS
+hostname) + your pairing code (`cmux-iphone pair`). The same pairing then works on
+Wi-Fi, cellular, or anywhere your tailnet reaches — no re-pairing.
+
+**4. (Recommended) Bind to Tailscale only.** By default the bridge listens on every
+interface (`0.0.0.0`), including your LAN. To accept connections **only** over
+Tailscale, pin the listener to your tailnet IP:
+
+```bash
+HOST=100.x.y.z cmux-iphone restart     # or set "bindAddress" in config.json
+```
+
+Use `127.0.0.1` for loopback-only. Re-run `cmux-iphone status` to confirm the bound
+address, and keep the Mac awake for remote use:
+`sudo pmset -a sleep 0 && sudo pmset -a disablesleep 1`.
+
+> **Multiple Macs on the road?** See [`REMOTE-SETUP.md`](REMOTE-SETUP.md) for naming
+> each Mac (`office-mac-1`, …) and switching between them in the app.
 
 ---
 

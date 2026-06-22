@@ -5,6 +5,12 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/lim-won/cmux-iphone/actions/workflows/ci.yml"><img src="https://github.com/lim-won/cmux-iphone/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"/>
+  <img src="https://img.shields.io/github/v/release/lim-won/cmux-iphone" alt="Release"/>
+</p>
+
+<p align="center">
   아이폰(과 Apple Watch)에서 <strong>Claude Code</strong>, <strong>Codex</strong>, <strong>cmux</strong>
   세션을 보고 제어하세요.<br/>
   실시간 터미널 출력 확인과 프롬프트 전송, 권한 요청은 아이폰에서 승인(Apple Watch에서는 모니터링) — LAN 또는 Tailscale로.
@@ -173,7 +179,7 @@ watchOS Settings → Privacy & Security.)
 
 ```text
 $ cmux-iphone pair
-Pairing code: ******
+Pairing code: 000000
 Enter this code in the Cmux iPhone app on your iPhone.
 ```
 
@@ -186,6 +192,51 @@ Enter this code in the Cmux iPhone app on your iPhone.
 > 실행하세요 — 재시작마다 새 6자리 코드(24h TTL, 기기 페어링 후 비워짐).
 
 > **워치 승인 (베타):** 워치는 승인을 *보여주지만*, 현재는 아이폰에서 응답합니다.
+
+---
+
+## Tailscale 원격 접속
+
+브리지는 평문 HTTP로 통신하며 LAN 또는 비공개 [Tailscale](https://tailscale.com) 테일넷을 위해
+설계되었습니다 — **공개 인터넷용이 아닙니다**. Tailscale을 쓰면 같은 Wi-Fi에 있는 것처럼 어디서나
+아이폰에서 Mac에 접속할 수 있습니다.
+
+**1. 두 기기에 Tailscale 설치 + 같은 계정 로그인.**
+
+```bash
+brew install --cask tailscale     # Mac (또는 앱 다운로드) 후 로그인
+```
+
+아이폰에는 App Store에서 **Tailscale**을 설치하고 **같은** 계정으로 로그인하세요. 이제 두 기기가
+하나의 비공개 테일넷을 공유합니다.
+
+**2. Mac의 Tailscale 주소 확인.**
+
+```bash
+cmux-iphone status
+# Tailscale: http://100.x.y.z:7860
+```
+
+`100.x.y.z`가 Mac의 테일넷 IP입니다. **MagicDNS**(Tailscale 관리 콘솔)를 켜면 호스트네임도 쓸
+수 있습니다(예: `your-mac`).
+
+**3. 그 주소로 폰을 페어링.** Bonjour 자동 발견은 같은 Wi-Fi에서만 동작하고 **테일넷을 넘지
+못하므로**, 원격에서는 주소를 직접 입력해야 합니다: 앱에서 **Enter IP manually**를 탭하고
+`100.x.y.z`(또는 MagicDNS 호스트네임)와 페어링 코드(`cmux-iphone pair`)를 입력하세요. 한 번
+페어링하면 Wi-Fi·셀룰러 등 테일넷이 닿는 어디서나 동작합니다 — 재페어링 불필요.
+
+**4. (권장) Tailscale 전용 바인딩.** 기본적으로 브리지는 LAN을 포함한 모든 인터페이스(`0.0.0.0`)에서
+수신합니다. **Tailscale로만** 연결을 받으려면 테일넷 IP로 리스너를 고정하세요:
+
+```bash
+HOST=100.x.y.z cmux-iphone restart     # 또는 config.json의 "bindAddress" 설정
+```
+
+loopback 전용은 `127.0.0.1`. `cmux-iphone status`로 바인딩 주소를 확인하고, 원격 사용 시 Mac이
+잠들지 않게 하세요: `sudo pmset -a sleep 0 && sudo pmset -a disablesleep 1`.
+
+> **여러 Mac을 이동 중 쓰려면** [`REMOTE-SETUP.md`](REMOTE-SETUP.md)에서 각 Mac 이름 지정
+> (`office-mac-1`, …)과 앱에서 전환하는 방법을 참고하세요.
 
 ---
 

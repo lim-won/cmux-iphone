@@ -1,5 +1,10 @@
 # Cmux iPhone — 이동용 원격 설정 (여러 Mac + cmux + Tailscale)
 
+> **English:** This is the advanced **multi-Mac** remote guide — naming several Macs
+> (`office-mac-1`, …) and switching between them in the app. For the basic single-Mac
+> Tailscale setup, see **Remote access over Tailscale** in the
+> [README](README.md#remote-access-over-tailscale). The detailed steps below are in Korean.
+
 목표: 아이폰에서 여러 office Mac의 cmux 안 claude/codex 세션을 **구분해서 보고,
 승인하고, 프롬프트를 직접 입력**.
 
