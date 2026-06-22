@@ -4,9 +4,8 @@
 // come from config.json (if present) merged over built-in defaults; env vars
 // still override at runtime (PORT, CMUX_IPHONE_HOOK_PORT, CMUX_BIN, …).
 //
-// NOTE: the data dir is still "cmux-iphone" for backward compatibility with
-// existing installs (secrets/tokens already live there). The rename to
-// "cmux-iphone" is a deliberate later migration, not a silent move.
+// Storage lives under ~/Library/Application Support/cmux-iphone (secrets/tokens),
+// ~/Library/Logs/cmux-iphone, and ~/.config/cmux-iphone (cmux password).
 
 import os from "node:os";
 import path from "node:path";

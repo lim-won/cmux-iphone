@@ -3,6 +3,7 @@
 // "already configured" for steps that are already done.
 
 import { spawnSync } from "node:child_process";
+import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -60,6 +61,15 @@ export async function run(args = []) {
 
   // 3) Persist config (merge, never clobber)
   saveConfig({ runner, cmux: { ...cfg.cmux, enabled: runner === "cmux" } });
+  // Give every install ONE stable pairing code so non-developers never have to
+  // chase a rotating code: random 6-digit, stored 0600 (not in the repo),
+  // retrievable anytime with `cmux-iphone pair`. The CMUX_IPHONE_PAIR_CODE env
+  // var still overrides; generated once, kept on re-run.
+  let pairCode = process.env.CMUX_IPHONE_PAIR_CODE || cfg.pairing?.fixedCode || null;
+  if (!pairCode) {
+    pairCode = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+    saveConfig({ pairing: { ...cfg.pairing, mode: "fixed", fixedCode: pairCode } });
+  }
   console.log(`✓ config written → ${paths.configFile}`);
 
   // 4) Dependencies (reproducible)
@@ -108,8 +118,10 @@ export async function run(args = []) {
   const ts = tailscaleIPv4();
   if (lan) console.log(`  LAN:       http://${lan}:${apiPort}`);
   if (ts) console.log(`  Tailscale: http://${ts}:${apiPort}`);
-  if (up) {
-    const pc = await api("GET", "/pair-code");
+  if (pairCode) {
+    console.log(`  Code:      ${pairCode}   (stays the same — re-show anytime with 'cmux-iphone pair')`);
+  } else if (up) {
+    const pc = await api("GET", "/pair-code"); // rotating mode (env/config didn't pin one)
     if (pc.ok && pc.json && pc.json.code) console.log(`  Code:      ${pc.json.code}`);
   }
   console.log("\nThen run 'cmux-iphone doctor' if anything looks off.");

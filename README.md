@@ -146,12 +146,34 @@ Management → tap your developer profile → **Trust**.
 
 ### Pair
 
-1. Open the app → enter the **pairing code** from `cmux-iphone pair`.
-2. Same Wi-Fi → the bridge is auto-discovered (Bonjour). Otherwise enter the
-   Mac's IP/Tailscale address shown by `cmux-iphone status`.
+1. Open the app → enter the **pairing code** (see below) + the Mac's address
+   (`cmux-iphone status` shows the LAN and Tailscale addresses).
+2. Same Wi-Fi → the bridge is also auto-discovered (Bonjour), so you can skip
+   typing the address. Across networks, use the **Tailscale address** so the
+   same pairing works whether you're in the office or away.
 
 Each device gets its **own token**; revoke any of them with
 `cmux-iphone pair --revoke <id>` (see `cmux-iphone pair --list`).
+
+#### Where do I get the pairing code?
+
+You don't need to be a developer — it's two commands at most:
+
+- **At install,** `cmux-iphone setup` prints your code (and the addresses) at the
+  end. It generates **one stable code per Mac** and saves it — it does **not**
+  keep changing, so you can reuse it.
+- **Anytime later,** run `cmux-iphone pair` to show it again.
+
+```text
+$ cmux-iphone pair
+Pairing code: ******
+Enter this code in the Cmux iPhone app on your iPhone.
+```
+
+> **Choose your own code (optional):** set `CMUX_IPHONE_PAIR_CODE=123456` in the
+> bridge's environment to pin a memorable code. The code is the pairing gate
+> (rate-limited, LAN/Tailscale-only, and each device still gets its own token),
+> so keep it private and don't expose the bridge to the public internet.
 
 > **Watch approvals (beta):** the Watch *shows* approvals but you answer them on
 > the iPhone for now.

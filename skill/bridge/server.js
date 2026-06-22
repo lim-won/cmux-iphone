@@ -8,7 +8,7 @@ import { spawn as childSpawn } from "node:child_process";
 import { Bonjour } from "bonjour-service";
 import * as cmux from "./cmux.js";
 import { createDeviceStore } from "./lib/devices.js";
-import { paths as cfgPaths } from "./lib/config.js";
+import { paths as cfgPaths, getConfig } from "./lib/config.js";
 
 // ---------------------------------------------------------------------------
 // Logging (must be defined before use)
@@ -67,11 +67,17 @@ const PORT_RANGE_START = 7860;
 const PORT_RANGE_END = 7869;
 const PAIRING_CODE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 // Pairing code is ROTATING by default: a fresh random 6-digit code with a 24h
-// TTL, regenerated on restart and cleared after a device pairs. Set CMUX_IPHONE_PAIR_CODE
-// to pin a fixed code (survives restarts + re-pairing) for personal convenience.
+// TTL, regenerated on restart and cleared after a device pairs. A FIXED code
+// (survives restarts + re-pairing, always retrievable via `cmux-iphone pair`)
+// can be pinned two ways, in priority order:
+//   1. CMUX_IPHONE_PAIR_CODE env var
+//   2. config.json  pairing.fixedCode  — what `cmux-iphone setup` persists so
+//      non-developers get one stable code they never have to hunt for again.
 // NEVER ship a hardcoded default here — a baked-in code is public in the repo and
-// defeats pairing auth for every install.
-const FIXED_PAIRING_CODE = process.env.CMUX_IPHONE_PAIR_CODE || null;
+// defeats pairing auth for every install. A persisted code is per-machine, random,
+// and stored 0600 (not in the repo).
+const FIXED_PAIRING_CODE =
+  process.env.CMUX_IPHONE_PAIR_CODE || getConfig().pairing?.fixedCode || null;
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const RATE_LIMIT_MAX_ATTEMPTS = 5;
 const SSE_HEARTBEAT_INTERVAL_MS = 10_000;
