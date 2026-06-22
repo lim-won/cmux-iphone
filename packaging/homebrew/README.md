@@ -25,9 +25,11 @@ release fills it).
 
 The release workflow needs to push the updated formula to your tap:
 
-1. Create a **classic Personal Access Token** with `repo` + `workflow` scope.
+1. Create a **fine-grained Personal Access Token** scoped to **only** the
+   `homebrew-tap` repository, with **Contents: Read and write** permission.
+   (Avoid a classic `repo`+`workflow` PAT — it grants far more than the bump needs.)
 2. In THIS repo: Settings → Secrets and variables → Actions → add
-   `COMMITTER_TOKEN` = that PAT.
+   `COMMITTER_TOKEN` = that token. The workflow injects it into the bump step only.
 
 (`.github/workflows/release.yml` resolves the tap as
 `${{ github.repository_owner }}/homebrew-tap` and the asset URL from the release.)

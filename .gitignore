@@ -23,5 +23,20 @@
 **/cmux-password
 *.plist.local
 
+# Local Claude Code overrides (user-specific; the shared SKILL.md is still tracked)
+**/.claude/settings.local.json
+
+# Env files (keep .env.example committable)
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Apple signing / provisioning material — never commit
+*.p12
+*.cer
+*.mobileprovision
+*.xcconfig.local
+
 # Logs
 *.log

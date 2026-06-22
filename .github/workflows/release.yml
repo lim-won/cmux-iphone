@@ -6,8 +6,10 @@ name: release
 #   3. bump url + sha256 in the Homebrew tap (OWNER/homebrew-tap)
 #
 # Prereqs (one-time, in repo Settings → Secrets and variables → Actions):
-#   COMMITTER_TOKEN — a classic PAT with `repo` + `workflow` scope that can push
-#                     to your homebrew-tap repo. See packaging/homebrew/README.md.
+#   COMMITTER_TOKEN — a token that can push to your homebrew-tap repo. Prefer a
+#                     FINE-GRAINED PAT scoped to ONLY that tap repo (Contents:
+#                     read/write) over a classic repo+workflow PAT. It is injected
+#                     into the bump step ONLY. See packaging/homebrew/README.md.
 
 on:
   release:
@@ -20,7 +22,9 @@ jobs:
   package:
     runs-on: ubuntu-latest
     env:
-      COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
+      # Boolean flag only (true/false) — does NOT expose the token value job-wide;
+      # the token itself is injected solely into the Homebrew bump step below.
+      HAS_TAP_TOKEN: ${{ secrets.COMMITTER_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -53,9 +57,12 @@ jobs:
       - name: Bump Homebrew formula in the tap
         # Skips cleanly when the tap PAT isn't configured (first release / forks).
         # Set the COMMITTER_TOKEN secret to enable automatic formula bumps.
-        if: ${{ env.COMMITTER_TOKEN != '' }}
+        if: ${{ env.HAS_TAP_TOKEN == 'true' }}
         uses: mislav/bump-homebrew-formula-action@v3
         with:
           formula-name: cmux-iphone
           homebrew-tap: ${{ github.repository_owner }}/homebrew-tap
           download-url: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/cmux-iphone-${{ env.V }}.tar.gz
+        env:
+          # Token scoped to THIS step only (not the job env).
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
