@@ -1,7 +1,7 @@
 <h1 align="center"><strong>Cmux iPhone</strong></h1>
 
 <p align="center">
-  <a href="README.md">English</a> · <strong>한국어</strong>
+  <a href="README.md">English</a> · <strong>한국어</strong> · <a href="README.zh-Hans.md">简体中文</a> · <a href="README.zh-Hant.md">繁體中文</a>
 </p>
 
 <p align="center">
