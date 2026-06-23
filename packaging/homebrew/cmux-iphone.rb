@@ -15,8 +15,8 @@
 class CmuxIphone < Formula
   desc "Bridge Claude Code / Codex / cmux sessions to the Cmux iPhone app"
   homepage "https://github.com/lim-won/cmux-iphone"
-  url "https://github.com/lim-won/cmux-iphone/releases/download/v0.1.0/cmux-iphone-0.1.0.tar.gz"
-  sha256 "9e9412596b1883397da60ade7678f0ee004ee4a0e0dd202e41e835b44e791148" # v0.1.0 (the tap copy is authoritative; bumped per release)
+  url "https://github.com/lim-won/cmux-iphone/releases/download/v0.1.1/cmux-iphone-0.1.1.tar.gz"
+  sha256 "161d2a9a2343794dc0b5b857eb2757dd78e9a1fc94aed55e36202521b88bc067" # v0.1.1 (the tap copy is authoritative; bumped per release)
   license "MIT"
 
   depends_on "node"
