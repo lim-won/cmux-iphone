@@ -17,29 +17,24 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.1</string>
+	<string>0.1.2</string>
 	<key>CFBundleVersion</key>
-	<string>2</string>
+	<string>3</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<!-- The bridge speaks plaintext HTTP on the LOCAL network (Bonjour-resolved
-		     LAN IPs and localhost). Scope the cleartext exemption to local
-		     networking instead of NSAllowsArbitraryLoads, which would disable ATS
-		     for the entire public internet. Tailscale MagicDNS (*.ts.net) is
-		     allowed explicitly; reach a Tailscale host by its MagicDNS name rather
-		     than a raw 100.x IP. -->
-		<key>NSAllowsLocalNetworking</key>
+		<!-- The bridge speaks plaintext HTTP to whatever host the user pairs with:
+		     a LAN IP (192.168.x / 10.x), a Tailscale 100.x CGNAT IP, a *.ts.net
+		     MagicDNS name, or any other hostname. ATS never gates raw IP literals
+		     (iOS 10+ always allows them), but it DOES block plaintext loads to
+		     multi-label hostnames, so we disable ATS globally.
+
+		     IMPORTANT: do NOT add NSAllowsLocalNetworking (or NSAllowsArbitraryLoads-
+		     InWebContent / *ForMedia). On iOS 10+ the mere presence of any of those
+		     granular keys makes NSAllowsArbitraryLoads be IGNORED (it reverts to NO),
+		     which silently re-blocks non-local hostnames over HTTP -> error -1022.
+		     Bridge access stays protected by pairing codes + per-device tokens. -->
+		<key>NSAllowsArbitraryLoads</key>
 		<true/>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>ts.net</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-			</dict>
-		</dict>
 	</dict>
 	<key>NSBonjourServices</key>
 	<array>

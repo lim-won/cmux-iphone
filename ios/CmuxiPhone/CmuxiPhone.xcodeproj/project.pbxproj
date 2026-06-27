@@ -38,7 +38,7 @@
 		8ED29C327F758D4F2664FB6F /* TerminalLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B23B013647A5DB66C7417269 /* TerminalLine.swift */; };
 		928EA85FBC680980166EC73C /* ClaudeMascot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE7023E08E4DDF2476B615DF /* ClaudeMascot.swift */; };
 		9DECDB0352B6B501C0F6CD4D /* OutputRingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8089E8B3BAC9A14E8CC804DB /* OutputRingBuffer.swift */; };
-		A03977C9B094B832F6AF0F51 /* CmuxiPhoneWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 1F60739299C122E1BC53493C /* CmuxiPhoneWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A03977C9B094B832F6AF0F51 /* Cmux iPhone Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 1F60739299C122E1BC53493C /* Cmux iPhone Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A2E7D1E353BA6B111B164CAA /* SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C466DFB2E642600CFD19FC4D /* SessionState.swift */; };
 		A6A523428B931B632AF65392 /* CmuxiPhoneWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0195F8A0992BB2F65FA17A /* CmuxiPhoneWatchApp.swift */; };
 		A85823539DB93997FB6633D1 /* CodexLogo.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF7F9E2F18CF5FFA411C5E61 /* CodexLogo.swift */; };
@@ -77,7 +77,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				A03977C9B094B832F6AF0F51 /* CmuxiPhoneWatch.app in Embed Watch Content */,
+				A03977C9B094B832F6AF0F51 /* Cmux iPhone Watch App.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -90,10 +90,10 @@
 		0C127FFDCC12652BD14292A4 /* BonjourDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonjourDiscovery.swift; sourceTree = "<group>"; };
 		157132FFD89EF529B72EBB04 /* WatchMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchMessage.swift; sourceTree = "<group>"; };
 		177BAB8DE1DF85A9322F1B32 /* ConnectionStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatusView.swift; sourceTree = "<group>"; };
-		1F60739299C122E1BC53493C /* CmuxiPhoneWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CmuxiPhoneWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1F60739299C122E1BC53493C /* Cmux iPhone Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Cmux iPhone Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		252A238C5B799AB9508C7166 /* RelayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayService.swift; sourceTree = "<group>"; };
 		2864BC250BF4142401BC20B7 /* VoiceInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInputView.swift; sourceTree = "<group>"; };
-		2C40DA1D3E10007769FBFA0F /* CmuxiPhone.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CmuxiPhone.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C40DA1D3E10007769FBFA0F /* Cmux iPhone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Cmux iPhone.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C87A16953F5DDDCC8BCECDA /* SessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionView.swift; sourceTree = "<group>"; };
 		313A6B0F766CDCFF3A8C4C58 /* StatusDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusDashboard.swift; sourceTree = "<group>"; };
 		31DAB3ADC3B74A47CDE78367 /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
@@ -216,8 +216,8 @@
 		9478CE71407262C6F525FF2C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2C40DA1D3E10007769FBFA0F /* CmuxiPhone.app */,
-				1F60739299C122E1BC53493C /* CmuxiPhoneWatch.app */,
+				2C40DA1D3E10007769FBFA0F /* Cmux iPhone.app */,
+				1F60739299C122E1BC53493C /* Cmux iPhone Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -322,7 +322,7 @@
 			packageProductDependencies = (
 			);
 			productName = CmuxiPhoneWatch;
-			productReference = 1F60739299C122E1BC53493C /* CmuxiPhoneWatch.app */;
+			productReference = 1F60739299C122E1BC53493C /* Cmux iPhone Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
 		7ABA176C75704E464E61F3AC /* CmuxiPhone */ = {
@@ -342,7 +342,7 @@
 			packageProductDependencies = (
 			);
 			productName = CmuxiPhone;
-			productReference = 2C40DA1D3E10007769FBFA0F /* CmuxiPhone.app */;
+			productReference = 2C40DA1D3E10007769FBFA0F /* Cmux iPhone.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -353,8 +353,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 7A4C62771399EF30113A89D6 /* Build configuration list for PBXProject "CmuxiPhone" */;
 			developmentRegion = en;
@@ -490,7 +488,11 @@
 		67352C7D69AF3EA7F5322E7F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "arm64 arm64e arm64_32";
+				ARCHS = (
+					arm64,
+					arm64e,
+					arm64_32,
+				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				"EXCLUDED_ARCHS[sdk=watchsimulator*]" = arm64e;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -583,7 +585,11 @@
 		E78FE6297C3BAE2E80DBCAD3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "arm64 arm64e arm64_32";
+				ARCHS = (
+					arm64,
+					arm64e,
+					arm64_32,
+				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				"EXCLUDED_ARCHS[sdk=watchsimulator*]" = arm64e;
 				GENERATE_INFOPLIST_FILE = NO;

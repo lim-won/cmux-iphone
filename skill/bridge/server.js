@@ -10,6 +10,7 @@ import { Bonjour } from "bonjour-service";
 import * as cmux from "./cmux.js";
 import { createDeviceStore } from "./lib/devices.js";
 import { paths as cfgPaths, getConfig, writeRuntime, clearRuntime } from "./lib/config.js";
+import { buildCodexExecApprovalCandidate } from "./lib/codex-approval.js";
 
 // ---------------------------------------------------------------------------
 // Logging (must be defined before use)
@@ -688,15 +689,23 @@ function recordCodexExecApprovalCandidate(line) {
     return;
   }
 
-  if (args?.sandbox_permissions !== "require_escalated") return;
+  const candidate = buildCodexExecApprovalCandidate("exec_command", args);
+  if (candidate) codexExecApprovalCandidates.set(match[2], candidate);
+}
 
-  codexExecApprovalCandidates.set(match[2], {
-    command: args.cmd || "",
-    justification: args.justification || "Would you like to run this command?",
-    workdir: args.workdir || "",
-    prefixRule: Array.isArray(args.prefix_rule) ? args.prefix_rule : [],
-    createdAt: Date.now(),
-  });
+function maybeSurfaceCodexExecApprovalFromCall(sessionId, toolName, args, fallbackWorkdir = "") {
+  const candidate = buildCodexExecApprovalCandidate(toolName, args, fallbackWorkdir);
+  if (!candidate) return;
+
+  codexExecApprovalCandidates.set(sessionId, candidate);
+  surfaceCodexExecApproval(sessionId)
+    .catch((err) => log("warn", `Codex approval surface failed: ${err.message}`));
+}
+
+function maybeClearCodexExecApprovalFromResult(sessionId, pendingCall) {
+  if (!pendingCall) return;
+  const candidate = buildCodexExecApprovalCandidate(pendingCall.name, pendingCall.args);
+  if (candidate) clearCodexSyntheticPermissionForSession(sessionId, "tool-output");
 }
 
 async function surfaceCodexExecApproval(sessionId) {
@@ -854,17 +863,20 @@ function handleCodexJsonlLine(line, fileState, options = {}) {
   if (parsed.type === "response_item" && parsed.payload?.type === "function_call") {
     const callId = parsed.payload.call_id;
     if (!callId) return;
+    const args = parseFunctionCallArgs(parsed.payload.arguments);
     codexPendingToolCalls.set(callId, {
       sessionId,
       name: parsed.payload.name,
-      args: parseFunctionCallArgs(parsed.payload.arguments),
+      args,
     });
+    maybeSurfaceCodexExecApprovalFromCall(sessionId, parsed.payload.name, args, fileState.cwd);
     return;
   }
 
   if (parsed.type === "response_item" && parsed.payload?.type === "function_call_output") {
     const pendingCall = codexPendingToolCalls.get(parsed.payload.call_id);
     emitCodexToolResult(sessionId, pendingCall, parsed.payload.output ?? null);
+    maybeClearCodexExecApprovalFromResult(sessionId, pendingCall);
     if (parsed.payload.call_id) {
       codexPendingToolCalls.delete(parsed.payload.call_id);
     }
@@ -887,6 +899,7 @@ function handleCodexJsonlLine(line, fileState, options = {}) {
     const command = pendingCall?.args?.cmd
       || (Array.isArray(parsed.payload.command) ? parsed.payload.command.join(" ") : "");
     emitCodexToolEvent(sessionId, "Bash", { command }, parsed.payload.aggregated_output ?? null);
+    maybeClearCodexExecApprovalFromResult(sessionId, pendingCall);
     if (parsed.payload.call_id) {
       codexPendingToolCalls.delete(parsed.payload.call_id);
     }

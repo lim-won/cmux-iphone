@@ -1,6 +1,18 @@
 import Foundation
 import UserNotifications
 
+final class NotificationForegroundPresenter: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = NotificationForegroundPresenter()
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .list, .sound, .badge])
+    }
+}
+
 /// Converts bridge events into local notifications.
 /// Posts approval-needed and task-complete notifications when the app
 /// is backgrounded, so the user is aware of events requiring attention.
@@ -16,6 +28,7 @@ final class NotificationService {
     // MARK: - Init
 
     init() {
+        UNUserNotificationCenter.current().delegate = NotificationForegroundPresenter.shared
         requestAuthorization()
         registerCategories()
     }

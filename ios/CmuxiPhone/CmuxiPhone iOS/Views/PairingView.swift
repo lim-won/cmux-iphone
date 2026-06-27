@@ -172,12 +172,24 @@ struct PairingView: View {
             }
             .padding(.top, 4)
         } else if showError {
-            Text(errorMessage)
-                .font(.system(size: 14))
-                .foregroundStyle(errorMessage.contains("만료") ? Color.claudeAmber : Color.denyRed)
-                .multilineTextAlignment(.center)
-                .transition(.opacity)
-                .padding(.top, 4)
+            VStack(spacing: 10) {
+                Text(errorMessage)
+                    .font(.system(size: 14))
+                    .foregroundStyle(errorMessage.contains("만료") ? Color.claudeAmber : Color.denyRed)
+                    .multilineTextAlignment(.center)
+                    .transition(.opacity)
+
+                if code.count == 6 {
+                    Button {
+                        submitCode(code)
+                    } label: {
+                        Text("다시 연결")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.claudeOrange)
+                    }
+                }
+            }
+            .padding(.top, 4)
         }
     }
 
@@ -262,7 +274,7 @@ struct PairingView: View {
                     let ip = ipAddress.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !ip.isEmpty else {
                         await MainActor.run {
-                            showPairingError("Mac의 IP 주소를 입력하세요.")
+                            showPairingError("Mac의 IP 주소를 입력하세요.", clearCode: false)
                         }
                         return
                     }
@@ -300,34 +312,36 @@ struct PairingView: View {
     private func handlePairingError(_ error: BridgeClient.BridgeError) {
         switch error {
         case .invalidCode:
-            showPairingError("코드가 올바르지 않습니다. 다시 시도하세요.")
+            showPairingError("코드가 올바르지 않습니다. 다시 시도하세요.", clearCode: true)
             shakeFields()
         case .expired:
-            showPairingError("코드가 만료되었습니다. Mac에서 새 코드가 생성되었습니다.")
+            showPairingError("코드가 만료되었습니다. Mac에서 새 코드가 생성되었습니다.", clearCode: true)
         case .rateLimited:
-            showPairingError("시도 횟수가 너무 많습니다. 잠시 후 다시 시도하세요.")
+            showPairingError("시도 횟수가 너무 많습니다. 잠시 후 다시 시도하세요.", clearCode: false)
         case .networkError:
             if !showManualIP {
                 showManualIP = true
-                showPairingError("브리지에 연결할 수 없습니다. Mac의 IP 주소를 입력하세요.")
+                showPairingError("브리지에 연결할 수 없습니다. Mac의 IP 주소를 입력하세요.", clearCode: false)
                 isIPFocused = true
             } else {
-                showPairingError("브리지 서버에 연결할 수 없습니다. IP와 네트워크를 확인하세요.")
+                showPairingError("브리지 서버에 연결할 수 없습니다. IP와 네트워크를 확인하세요.", clearCode: false)
             }
         case .serverError(let msg):
-            showPairingError(msg)
+            showPairingError(msg, clearCode: false)
         case .screenChanged:
-            showPairingError("다시 시도하세요.")
+            showPairingError("다시 시도하세요.", clearCode: false)
         }
     }
 
-    private func showPairingError(_ message: String) {
+    private func showPairingError(_ message: String, clearCode: Bool = false) {
         isConnecting = false
         errorMessage = message
         withAnimation(.easeInOut(duration: 0.3)) {
             showError = true
         }
-        code = ""
+        if clearCode {
+            code = ""
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             if showManualIP && ipAddress.isEmpty {
                 isIPFocused = true
